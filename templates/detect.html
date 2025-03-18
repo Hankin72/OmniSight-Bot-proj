@@ -91,9 +91,7 @@
         function exitDetection() {
             fetch('/stop_detect_feed', { method: 'POST' })
                 .then(() => {
-                    setTimeout(() => {
-                        window.location.href = "/";
-                    }, 500);
+                    window.location.href = "/";
                 })
                 .catch(() => {
                     window.location.href = "/";

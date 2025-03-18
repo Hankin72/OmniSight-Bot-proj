@@ -6,7 +6,6 @@ import threading
 import os
 import time
 import numpy as np
-from utils import kill_process_on_port
 from FaceDatabase import DEFAULT_FILENAME_DB, save_face_database, get_image_paths, load_face_database
 from insightface.app import FaceAnalysis
 from FaceUtils import LOCAL_MODELS_PATH
@@ -83,8 +82,6 @@ def collect_upload():
 # 实时人脸检测与识别页面<br/>
 @app.route('/detect')
 def detect():
-    global FACE_DB
-    FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
     return render_template('detect.html')
 
 
@@ -92,6 +89,7 @@ def detect():
 @app.route('/refresh_face_db', methods=['POST'])
 def refresh_face_db():
     global FACE_DB
+    print("refresh_face_db called")
     FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
     return jsonify({'status': 'success', 'message': 'Face database refreshed successfully'})
 
@@ -100,8 +98,8 @@ def refresh_face_db():
 def stop_detect_feed():
     global stream_running
     stream_running = False
-    return send_from_directory(TEMPLATES_DIR, "index.html")
-    # return jsonify({'status': 'success', 'message': 'Stream stopped'})
+    print("stop detect called")
+    return jsonify({'status': 'success', 'message': 'Stream stopped'})
 
 
 # 视频流生成器
@@ -139,6 +137,7 @@ def generate_detect_stream():
 
 # 识别函数
 def recognize_face(embedding):
+    global FACE_DB
     best_match = "Unknown"
     highest_sim = -1
     threshold = 0.45
@@ -171,15 +170,16 @@ def tracking():
 if __name__ == "__main__":
     PORT = 16880
     SERVER = "0.0.0.0"
-    kill_process_on_port(PORT)
+    app.run(host=SERVER, port=PORT, debug=True)
 
-    server = pywsgi.WSGIServer((SERVER, PORT), app)
-
-    print("running server on localhost  : http://127.0.0.1:16880")
-    print("running server on            : http://172.18.199.220:16880")
-    print("running server on            : http://192.168.31.124:16880")
-
-    server.serve_forever()
+    # #
+    # server = pywsgi.WSGIServer((SERVER, PORT), app)
+    #
+    # #
+    # # print(f"running server on localhost  : http://127.0.0.1:{PORT}")
+    # # print(f"running server on            : http://172.18.199.220:{PORT}")
+    # # print(f"running server on            : http://192.168.31.124:{PORT}")
+    # #
+    # server.serve_forever()
     # print(TEMPLATES_DIR)
 
-    # app.run(debug=True)
