@@ -5,56 +5,98 @@ import insightface
 from insightface.app import FaceAnalysis
 from insightface.data import get_image as ins_get_image
 import onnxruntime as ort
-import pickle
-
 from FaceUtils import *
-from FaceDatabase import load_face_database, DEFAULT_FILENAME_DB, USE_DEFAULT_MODEL
+from FaceDatabase import load_face_database, DEFAULT_FILENAME_DB
 
-DEFAULT_FILENAME_DB = 'my_face_database_sc.npy'
-
-# DEFAULT_FILENAME_DB = 'my_face_database_sc.npy'
-# USE_DEFAULT_MODEL="buffalo_sc"
-USE_DEFAULT_MODEL="buffalo_sc"
-APP_MODEL_PATH = 'face_analysis_model_sc.npy'  # # 人脸分析模型存储路径
-
-
+DEFAULT_FILENAME_DB = 'my_face_database_s.npy'
+USE_DEFAULT_MODEL="buffalo_s"
 FACE_DATABASE = load_face_database(filename=DEFAULT_FILENAME_DB)
-DRAW_LANDMARKS = False
+DRAW_LANDMARKS = True
 
-
-class FaceRecognizer:
+class FaceRecognitionTest:
     def __init__(self,
                  model_name='buffalo_s',
-                 allowed_modules=ALLOW_MODULES,
+                 allowed_modules=['detection', 'landmark_2d_106'],
                  providers=None,
                  ctx_id=0,
-                 det_size=(640, 480),
-                 threshold=0.5):
+                 det_size=(640, 640),
+                 camera_index=0,
+                 flip=True):
+        """
+        初始化人脸检测器。
+        参数：
+        - model_name: 使用的模型名称，默认 'buffalo_l'，可选 'buffalo_s'（轻量级模型）
+        - allowed_modules: 允许的模块列表，如 ['detection', 'landmark_2d_106']
+        - providers: ONNX Runtime 的计算提供商列表
+        - ctx_id: 计算设备 ID，-1 表示使用 CPU，0 表示使用第一个 GPU
+        - det_size: 人脸检测的输入尺寸 (width, height)
+        - camera_index: 摄像头设备索引，默认 0
+        - flip: 是否水平翻转帧，默认 True
+        """
+        if PI_PROVIDERS:
+            self.providers = PI_PROVIDERS
+        else:
+            self.providers = providers if providers else ort.get_available_providers()
 
-        self.providers = providers if providers else ort.get_available_providers()
-        print('Available providers:', self.providers)
-
-        # **1. 初始化人脸识别模型**
-        # 检查是否已有保存的 FaceAnalysis 模型
-        # if os.path.exists(APP_MODEL_PATH):
-        #     print("Loading FaceAnalysis model from saved file...")
-        #     with open(APP_MODEL_PATH, 'rb') as f:
-        #         self.app = pickle.load(f)
-        # else:
-        print("Initializing FaceAnalysis model and saving for future use...")
-        self.app = FaceAnalysis(name=model_name, allowed_modules=allowed_modules, providers=providers, root=LOCAL_MODELS_PATH)
+        #print('Available providers:', self.providers)
+        self.app = FaceAnalysis(name=model_name, allowed_modules=allowed_modules, providers=self.providers, root=LOCAL_MODELS_PATH)
         self.app.prepare(ctx_id=ctx_id, det_size=det_size)
-        # with open(APP_MODEL_PATH, 'wb') as f:
-        #     pickle.dump(self.app, f)  # 保存对象到文件
-        
 
-        self.app.prepare(ctx_id=ctx_id, det_size=det_size)
-        self.threshold = threshold
+        self.cap = cv2.VideoCapture(camera_index)
+        if not self.cap.isOpened():
+            raise IOError("无法打开摄像头")
+
+        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, det_size[0])
+        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, det_size[1])
+
+        self.flip = flip
+        self.threshold = .45
+
+
+    def process_frame(self, frame):
+        """
+        处理单帧图像，进行人脸检测和关键点绘制。
+        """
+        # 人脸检测
+        faces = self.app.get(frame)
+
+        # 绘制检测结果
+        for face in faces:
+            bbox = face.bbox.astype(int)
+
+            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), COLOR_GREEN, 1)
+            
+            if DRAW_LANDMARKS:
+                # 绘制关键点
+                lmk = face.landmark_2d_106
+                lmk = np.round(lmk).astype(int)
+            
+                draw_colored_landmarks(frame, lmk)
+
+            embedding = face.embedding
+            if embedding is None:
+                print("Error: 无法提取特征向量")
+                continue
+
+            name, pre = self.recognize_face(embedding)
+            # pre = "{:.2f}".format(pre)
+            # temp_label = f"{name} {pre}"
+            # print(temp_label)
+            if name == "Unknown":
+                cv2.putText(frame, name, (bbox[0], bbox[1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, COLOR_GREEN, 2)
+            else:
+                cv2.putText(frame, name, (bbox[0], bbox[1] - 10),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, COLOR_RED, 2)
+        return frame
 
     @staticmethod
     def cosine_similarity(a, b):
         """
         计算两个向量之间的余弦相似度
+        参数:
+        - a: 向量 a
+        - b: 向量 b
         返回:
         - similarity: 余弦相似度 (介于 -1 和 1 之间)
         """
@@ -84,103 +126,41 @@ class FaceRecognizer:
         else:
             return 'Unknown', highest_similarity
 
-    def find_someone(self, frame, target_name):
+    def run(self):
         """
-        在给定的帧中搜索目标姓名。
-        如果找到，返回人脸坐标和图像尺寸。
+        运行实时人脸检测。
         """
-
-        faces = self.app.get(frame)
-        image_height, image_width = frame.shape[:2]
-
-        for face in faces:
-            embedding = face.embedding
-            if embedding is None:
-                continue
-
-            if DRAW_LANDMARKS:
-                lmk = face.landmark_2d_106
-                lmk = np.round(lmk).astype(int)
-
-                draw_colored_landmarks(frame, lmk)
-
-            name, similarity = self.recognize_face(embedding)
-            bbox = face.bbox.astype(int)
-
-            face_left, face_top, face_right, face_bottom = bbox
-            bbox_res = [face_left, face_top, face_right, face_bottom, image_width, image_height]
-            return name, bbox_res
-
-        return None, None  # 如果未找到指定的人，返回 None
-
-
-class FaceRecognitionApp:
-    def __init__(self,
-                 model_name='buffalo_s',
-                 allowed_modules=ALLOW_MODULES,
-                 providers=None,
-                 ctx_id=0,
-                 det_size=(640, 640),
-                 camera_index=0,
-                 flip=True,
-                 threshold=0.50):
-        """
-        初始化人脸识别应用程序。
-        """
-        self.flip = flip
-        self.camera_index = camera_index
-
-        self.face_recognizer = FaceRecognizer(
-            model_name=model_name,
-            allowed_modules=allowed_modules,
-            providers=providers,
-            ctx_id=ctx_id,
-            det_size=det_size,
-            threshold=threshold
-        )
-
-    def run_usb_cam(self, target_name):
-        cap = cv2.VideoCapture(self.camera_index)
-        if not cap.isOpened():
-            raise IOError("无法打开USB摄像头, 请检查video index")
-
+        # if image_path:
+        #     img = cv2.imread(image_path)
+        #     img = self.process_frame(img)
+        #     cv2.imshow('Real-time Face Detection', img)
+        #     show_image(img)
+        #     # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     #     return
+        # else:
         while True:
-            ret, frame = cap.read()
+            ret, frame = self.cap.read()
             if not ret:
-                print("无法接收帧。正在退出...")
+                print("Can't receive frame (stream end?). Exiting ...")
                 break
 
             if self.flip:
                 frame = cv2.flip(frame, 1)
 
-            self.find_and_draw_target_face(frame, target_name)
+            frame = self.process_frame(frame)
 
-            cv2.imshow('usb CAM detect', frame)
+            # self.out.write(frame)
+
+            cv2.imshow('Real-time Face Detection', frame)
 
             if cv2.waitKey(1) == ord('q'):
                 break
 
-        cap.release()
         self.release()
 
-    def find_and_draw_target_face(self, frame, target_name):
-        ret_name, result = self.face_recognizer.find_someone(frame, target_name)
-
-        if ret_name and result:
-            face_left, face_top, face_right, face_bottom, image_width, image_height = result
-
-            if ret_name == target_name:
-                print(target_name, "--->", result)
-                # 在找到的人脸周围绘制边框
-                cv2.rectangle(frame, (face_left, face_top), (face_right, face_bottom), COLOR_RED, 2)
-                cv2.putText(frame, target_name, (face_left, face_top - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, COLOR_RED, 2)
-            else:
-                cv2.rectangle(frame, (face_left, face_top), (face_right, face_bottom), COLOR_GREEN, 2)
-                cv2.putText(frame, ret_name, (face_left, face_top - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.9, COLOR_GREEN, 2)
-
     def release(self):
+        self.cap.release()
+        # self.video_writer.release()  # 释放视频写入器
         cv2.destroyAllWindows()
 
     def __del__(self):
@@ -188,17 +168,12 @@ class FaceRecognitionApp:
 
 
 if __name__ == '__main__':
-    # ALLOW_MODULES = ['detection', 'recognition', 'landmark_2d_106']
-    ALLOW_MODULES = ['detection', 'recognition']
-    target_person_name = "haojin" 
-    app = FaceRecognitionApp(
+    detector = FaceRecognitionTest(
         model_name=USE_DEFAULT_MODEL,
-        allowed_modules=ALLOW_MODULES,
-        ctx_id=-1,  # 使用 CPU
+        allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
+        ctx_id=-1,  # 设置为 -1 使用 CPU
         det_size=(640, 480),
         camera_index=0,
-        providers=PI_PROVIDERS, 
-        flip=True,
-        threshold=0.5
+        flip=True
     )
-    app.run_usb_cam(target_person_name)
+    detector.run()
