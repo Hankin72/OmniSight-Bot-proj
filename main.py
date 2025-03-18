@@ -11,7 +11,6 @@ from FaceDatabase import DEFAULT_FILENAME_DB, save_face_database, get_image_path
 from insightface.app import FaceAnalysis
 from FaceUtils import LOCAL_MODELS_PATH
 
-
 app = Flask(__name__)
 CORS(app)
 
@@ -22,13 +21,12 @@ UPLOAD_FOLDER = os.path.join(CURR_PATH, 'collected_faces')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-
 # 加载人脸数据库和模型
 FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
 face_model = FaceAnalysis(
-        name='buffalo_s', 
-        allowed_modules=['detection', 'recognition', 'landmark_2d_106'], 
-        root='./models')
+                    name='buffalo_s',
+                    allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
+                    root='./models')
 face_model.prepare(ctx_id=-1, det_size=(640, 640))
 
 USB_CAM_INDEX = 0
@@ -40,10 +38,12 @@ stream_running = True
 def index():
     return send_from_directory(TEMPLATES_DIR, "index.html")
 
+
 # 人脸采集页面
 @app.route('/collect', methods=['POST', 'GET'])
 def collect():
     return render_template('collect.html')
+
 
 # 接收上传的人脸照片和姓名并按姓名创建文件夹
 @app.route('/collect_upload', methods=['POST'])
@@ -56,7 +56,8 @@ def collect_upload():
 
     # 校验名称避免非法字符
     if not name.isalnum() and "_" not in name:
-        return jsonify({'status': 'error', 'message': 'Invalid name format; use letters, numbers or underscores only.'}), 400
+        return jsonify(
+            {'status': 'error', 'message': 'Invalid name format; use letters, numbers or underscores only.'}), 400
 
     user_folder = os.path.join(UPLOAD_FOLDER, name)
     if not os.path.exists(user_folder):
@@ -66,12 +67,13 @@ def collect_upload():
     filename = f"{name}_{timestamp}.jpg"
     save_path = os.path.join(user_folder, filename)
     file.save(save_path)
-    
+
     # 将该用户照片目录中的图片生成 embedding 并更新数据库
     image_paths = get_image_paths(user_folder)
     save_face_database(image_paths=image_paths, person_name=name, filename=DEFAULT_FILENAME_DB)
 
     return jsonify({'status': 'success', 'message': f'Image saved in {user_folder} as {filename}'})
+
 
 # # 提供上传页面（供手机扫码跳转后使用）
 # @app.route('/collect_upload_page', methods=['GET'])
@@ -84,6 +86,7 @@ def detect():
     global FACE_DB
     FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
     return render_template('detect.html')
+
 
 # 刷新人脸数据库接口
 @app.route('/refresh_face_db', methods=['POST'])
@@ -132,7 +135,7 @@ def generate_detect_stream():
         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
     cap.release()
-    
+
 
 # 识别函数
 def recognize_face(embedding):
@@ -152,6 +155,7 @@ def recognize_face(embedding):
 
     return best_match, highest_sim
 
+
 # 视频流接口
 @app.route('/detect_feed')
 def detect_feed():
@@ -162,22 +166,20 @@ def detect_feed():
 @app.route('/track', methods=['POST', 'GET'])
 def tracking():
     return render_template('track.html')
-    
+
 
 if __name__ == "__main__":
-    
     PORT = 16880
     SERVER = "0.0.0.0"
     kill_process_on_port(PORT)
-    
+
     server = pywsgi.WSGIServer((SERVER, PORT), app)
-    
+
     print("running server on localhost  : http://127.0.0.1:16880")
     print("running server on            : http://172.18.199.220:16880")
     print("running server on            : http://192.168.31.124:16880")
-    
-    
+
     server.serve_forever()
     # print(TEMPLATES_DIR)
-    
+
     # app.run(debug=True)

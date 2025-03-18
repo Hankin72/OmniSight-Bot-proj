@@ -9,9 +9,10 @@ from FaceUtils import *
 from FaceDatabase import load_face_database, DEFAULT_FILENAME_DB
 
 DEFAULT_FILENAME_DB = 'my_face_database_s.npy'
-USE_DEFAULT_MODEL="buffalo_s"
+USE_DEFAULT_MODEL = "buffalo_s"
 FACE_DATABASE = load_face_database(filename=DEFAULT_FILENAME_DB)
 DRAW_LANDMARKS = True
+
 
 class FaceRecognitionTest:
     def __init__(self,
@@ -38,8 +39,9 @@ class FaceRecognitionTest:
         else:
             self.providers = providers if providers else ort.get_available_providers()
 
-        #print('Available providers:', self.providers)
-        self.app = FaceAnalysis(name=model_name, allowed_modules=allowed_modules, providers=self.providers, root=LOCAL_MODELS_PATH)
+        # print('Available providers:', self.providers)
+        self.app = FaceAnalysis(name=model_name, allowed_modules=allowed_modules, providers=self.providers,
+                                root=LOCAL_MODELS_PATH)
         self.app.prepare(ctx_id=ctx_id, det_size=det_size)
 
         self.cap = cv2.VideoCapture(camera_index)
@@ -51,7 +53,6 @@ class FaceRecognitionTest:
 
         self.flip = flip
         self.threshold = .45
-
 
     def process_frame(self, frame):
         """
@@ -65,12 +66,12 @@ class FaceRecognitionTest:
             bbox = face.bbox.astype(int)
 
             cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), COLOR_GREEN, 1)
-            
+
             if DRAW_LANDMARKS:
                 # 绘制关键点
                 lmk = face.landmark_2d_106
                 lmk = np.round(lmk).astype(int)
-            
+
                 draw_colored_landmarks(frame, lmk)
 
             embedding = face.embedding

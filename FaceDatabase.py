@@ -1,9 +1,8 @@
-import os.path 
+import os.path
 import cv2
 import numpy as np
 from insightface.app import FaceAnalysis
-import json 
-
+import json
 
 import os.path
 
@@ -17,7 +16,8 @@ DEFAULT_FILENAME_DB = 'my_face_database_s.npy'
 
 # DEFAULT_FILENAME_DB = 'my_face_database_sc.npy'
 # USE_DEFAULT_MODEL="buffalo_sc"
-USE_DEFAULT_MODEL="buffalo_s"
+USE_DEFAULT_MODEL = "buffalo_s"
+
 
 class FaceDatabase:
     def __init__(self):
@@ -53,9 +53,9 @@ class FaceDatabase:
 
 class FaceDetector:
     def __init__(self, model_name=USE_DEFAULT_MODEL):
-        self.app = FaceAnalysis(name=model_name, allowed_modules=['detection', 'recognition', 'landmark_2d_106'], 
+        self.app = FaceAnalysis(name=model_name, allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
                                 root="./models")
-        
+
         # self.app = FaceAnalysis(name=model_name, allowed_modules=['detection', 'recognition'], root="./models")
         self.app.prepare(ctx_id=-1, det_size=(640, 640))  # 使用 CPU
 
@@ -85,6 +85,7 @@ def get_image_paths(directory):
 
     return image_paths
 
+
 def save_face_database(image_paths=[], person_name="", filename=DEFAULT_FILENAME_DB):
     """
     将多个图片的 embedding 存入人脸数据库。
@@ -98,13 +99,13 @@ def save_face_database(image_paths=[], person_name="", filename=DEFAULT_FILENAME
         face_db.load_from_file()
     else:
         print(f"{filename} not exists, create a face-db")
-        
+
     detector = FaceDetector()
 
     for image_path in image_paths:
         print(">>>>> Processing image_path: " + image_path)
         faces = detector.detect_and_extract(image_path)
-        
+
         # faces 可能为 None 或空列表，要先判断
         if not faces:
             continue
@@ -113,12 +114,12 @@ def save_face_database(image_paths=[], person_name="", filename=DEFAULT_FILENAME
         if len(faces) > 1:
             print(f"检测到超过 1 个人脸，跳过保存 => {image_path}")
             continue
-        
+
         # 仅当检测到 1 张人脸的情况下，才进行保存
         if len(faces) == 1:
             embedding = faces[0].embedding
             face_db.add_face(person_name, embedding)
-        
+
     # 保存
     face_db.save_to_file()
 
@@ -134,7 +135,7 @@ if __name__ == '__main__':
     # image_paths = get_image_paths("./sample/haojin")
 
     # save_face_database(image_paths=image_paths, person_name="haojin", filename=DEFAULT_FILENAME_DB)
-    
+
     # 1. 读取 JSON 文件
     with open('faces_paths.json', 'r', encoding='utf-8') as f:
         face_paths_dict = json.load(f)
@@ -144,6 +145,3 @@ if __name__ == '__main__':
         image_paths = get_image_paths(image_folder_path)  # 使用之前的 get_image_paths 函数
         print(f"当前处理姓名: {person_name}, 对应图片目录: {image_folder_path}")
         save_face_database(image_paths=image_paths, person_name=person_name, filename=DEFAULT_FILENAME_DB)
-        
-
-

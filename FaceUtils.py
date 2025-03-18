@@ -22,15 +22,17 @@ COLOR_RED = (0, 0, 255)  # 绘图颜色，绿色
 COLOR_GREEN = (0, 255, 0)
 
 BASE_REPO_URL = 'https://github.com/deepinsight/insightface/releases/download/v0.7'
-MODELS=['buffalo_s', 'buffalo_l']
+MODELS = ['buffalo_s', 'buffalo_l']
 USE_DEFAULT_MODEL = MODELS[0]
 LOCAL_MODELS_PATH = "./models"
-ALLOW_MODULES=['detection', 'recognition', 'landmark_2d_106']
+ALLOW_MODULES = ['detection', 'recognition', 'landmark_2d_106']
 PI_PROVIDERS = ['CPUExecutionProvider']
 
 import onnxruntime as ort
+
 PROVIDERS = []
 PROVIDERS = PROVIDERS if PROVIDERS else ort.get_available_providers()
+
 
 def draw_on(img, face):
     import cv2
