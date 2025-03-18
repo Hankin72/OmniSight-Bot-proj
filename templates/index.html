@@ -2,16 +2,70 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Face Recognition System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #6dd5ed, #2193b0);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #fff;
+            text-align: center;
+        }
+        h1 {
+            font-size: 3.5rem;
+            margin-bottom: 40px;
+        }
+        .button-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            width: 100%;
+            max-width: 600px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background-color: #ffffff;
+            color: #2193b0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 160px;
+        }
+        button:hover {
+            background-color: #2193b0;
+            color: #fff;
+            transform: scale(1.05);
+        }
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+            }
+            button {
+                font-size: 1rem;
+                padding: 10px 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Weclome to Face Recognition System</h1>
-
-    <a href="/collect" class=""><button>Face Collection</button></a>
-    <a href="/detect" class=""><button>Face Detection</button></a>
-    
-    <a href="/track" class=""><button>Face Tracking</button></a>
-    
+    <h1>Welcome to Face Recognition System</h1>
+    <br/><br/>
+    <div class="button-container">
+        <a href="/collect"><button>Face Collection</button></a>
+        <a href="/detect"> <button>Face Detection</button></a>
+        <a href="/track">  <button>Face Tracking</button></a>
+    </div>
 </body>
 </html>

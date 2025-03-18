@@ -2,10 +2,173 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Face Collection via Webcam</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #6dd5ed, #2193b0);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #fff;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        video, canvas {
+            border: 4px solid #fff;
+            border-radius: 10px;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+        }
+        video {
+            transform: scaleX(-1); /* 实时预览水平反转 */
+        }
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        input[type="text"] {
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            width: 250px;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            background-color: #2193b0;
+            color: #fff;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin: 5px;
+            transition: 0.3s;
+        }
+        button:hover {
+            background-color: #17627d;
+            transform: scale(1.05);
+        }
+        .video-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+        }
+    </style>
 </head>
 <body>
-    <h1 class="">face collection</h1>
+    <h1>Face Collection via Webcam</h1>
+
+    <div class="video-container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display:none;"></canvas>
+        <div class="overlay">
+            <svg width="100%" height="100%" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <mask id="faceMask">
+                        <rect width="110%" height="95%" fill="white"/>
+                        <ellipse cx="200" cy="200" rx="80" ry="120" fill="black"/>
+                    </mask>
+                </defs>
+                <rect width="100%" height="100%" fill="rgba(255, 255, 255, 0.6)" mask="url(#faceMask)"/>
+            </svg>
+        </div>
+    </div>
+
+    <br/>
+
+    <input type="text" id="name" placeholder="Enter name (no Chinese)" pattern="[A-Za-z0-9_]+" required>
+    <br/>
+    <div id="buttons">
+        <button onclick="capturePhoto()">Capture Image</button>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const buttonsDiv = document.getElementById('buttons');
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+                video.srcObject = stream;
+                video.setAttribute('playsinline', 'true');
+                video.play();
+            } catch (err) {
+                console.error('Camera access error:', err);
+                alert('Unable to access the camera.');
+            }
+        }
+
+        function capturePhoto() {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            context.translate(canvas.width, 0);   // 将画布坐标原点移动到右上角
+            context.scale(-1, 1);                 // 水平翻转
+
+            // 抓拍时直接绘制（不反转）
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            video.style.display = 'none';
+            canvas.style.display = 'block';
+
+            buttonsDiv.innerHTML = `
+                <button onclick="retakePhoto()">Retake</button>
+                <button onclick="uploadPhoto()">Confirm & Upload</button>
+            `;
+        }
+
+        function retakePhoto() {
+            video.style.display = 'block';
+            canvas.style.display = 'none';
+            buttonsDiv.innerHTML = `
+                <button onclick="capturePhoto()">Capture Image</button>
+            `;
+        }
+
+        function uploadPhoto() {
+            const name = document.getElementById('name').value;
+            if (!name.match(/^[A-Za-z0-9_]+$/)) {
+                alert('Invalid name format. Use letters, numbers, or underscores only.');
+                return;
+            }
+
+            canvas.toBlob(blob => {
+                const formData = new FormData();
+                formData.append('name', name);
+                formData.append('photo', blob, name + '.jpg');
+
+                fetch('/collect_upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                    retakePhoto();
+                })
+                .catch(error => alert('Upload failed: ' + error));
+            }, 'image/jpeg');
+        }
+
+        window.onload = startCamera;
+    </script>
 </body>
 </html>

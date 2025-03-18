@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Face Collection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #6dd5ed, #2193b0);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: #fff;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 30px;
+        }
+        .qrcode-container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            max-width: 300px;
+            width: 100%;
+        }
+        canvas {
+            width: 100%;
+            height: auto;
+        }
+        p {
+            color: #333;
+            margin-top: 15px;
+            font-size: 1rem;
+        }
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            .qrcode-container {
+                padding: 15px;
+            }
+            p {
+                font-size: 0.95rem;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+    <h1>Face Data Collection</h1>
+
+    <div class="qrcode-container">
+        <canvas id="qrcode"></canvas>
+        <p>Scan the QR code with your phone to upload face data.</p>
+    </div>
+
+    <script>
+        const host = window.location.hostname;
+        const url = `http://${host}:16880/collect_upload_page`;
+        QRCode.toCanvas(document.getElementById('qrcode'), url, function (error) {
+            if (error) console.error(error);
+        });
+    </script>
+</body>
+</html>
