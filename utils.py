@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import traceback
+import numpy as np
 
 
 class Color:
@@ -64,3 +65,18 @@ def kill_process_on_port(port):
             printWithColorRed(f"No process with PID {pid_str} found.")
     else:
         printWithColorYellow(f"No process running on port {port}")
+        
+        
+def cosine_similarity(a, b):
+    """
+    计算两个向量之间的余弦相似度
+    参数:
+    - a: 向量 a
+    - b: 向量 b
+    返回:
+    - similarity: 余弦相似度 (介于 -1 和 1 之间)
+    """
+    dot_product = np.dot(a, b)
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    return dot_product / (norm_a * norm_b)

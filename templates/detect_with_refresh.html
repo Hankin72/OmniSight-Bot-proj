@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Real-time Face Detection & Refresh</title>
+    <title>Face Detection with Refresh</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,10 +65,7 @@
     <img src="/detect_feed" class="stream" alt="Detection Stream" id="stream">
 
     <button onclick="refreshDatabase()">Refresh Face Database</button>
-    <button onclick="exitDetection()">Exit Detection</button>
     <p id="status-message"></p>
-
-    <audio id="success-sound" src="https://www.soundjay.com/buttons/sounds/button-3.mp3" preload="auto"></audio>
 
     <script>
         function refreshDatabase() {
@@ -78,7 +75,6 @@
             .then(response => response.json())
             .then(data => {
                 document.getElementById('status-message').innerText = data.message;
-                document.getElementById('success-sound').play();
                 setTimeout(() => {
                     document.getElementById('status-message').innerText = '';
                 }, 3000);
@@ -86,18 +82,6 @@
             .catch(err => {
                 document.getElementById('status-message').innerText = 'Error refreshing database';
             });
-        }
-
-        function exitDetection() {
-            fetch('/stop_detect_feed', { method: 'POST' })
-                .then(() => {
-                    setTimeout(() => {
-                        window.location.href = "/";
-                    }, 500);
-                })
-                .catch(() => {
-                    window.location.href = "/";
-                });
         }
     </script>
 </body>
