@@ -1,7 +1,7 @@
 import cv2
 
 
-def run_usb_cam(camera_index=0):
+def run_usb_cam(camera_index=1):
     cap = cv2.VideoCapture(camera_index)
     if not cap.isOpened():
         raise IOError("无法打开USB摄像头, 请检查video index")
@@ -23,7 +23,7 @@ def run_usb_cam(camera_index=0):
     cap.release()
     cv2.destroyAllWindows()
 
-run_usb_cam(0)
+run_usb_cam(1)
 
 
 

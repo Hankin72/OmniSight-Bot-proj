@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, send_from_directory, Response, redirect, url_for
-from gevent import pywsgi
+# from gevent import pywsgi
 from flask_cors import CORS
 import cv2
 import threading
@@ -8,7 +8,7 @@ import time
 import numpy as np
 from FaceDatabase import DEFAULT_FILENAME_DB, save_face_database, get_image_paths, load_face_database
 from insightface.app import FaceAnalysis
-from FaceUtils import LOCAL_MODELS_PATH
+from FaceUtils import LOCAL_MODELS_PATH, draw_colored_landmarks
 
 app = Flask(__name__)
 CORS(app)
@@ -28,8 +28,9 @@ face_model = FaceAnalysis(
                     root='./models')
 face_model.prepare(ctx_id=-1, det_size=(640, 640))
 
-USB_CAM_INDEX = 0
+USB_CAM_INDEX = 1
 stream_running = True
+DRAW_LANDMARKS = True
 
 
 # 主页
@@ -122,6 +123,13 @@ def generate_detect_stream():
             bbox = face.bbox.astype(int)
             cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
 
+            if DRAW_LANDMARKS:
+                # 绘制关键点
+                lmk = face.landmark_2d_106
+                lmk = np.round(lmk).astype(int)
+
+                draw_colored_landmarks(frame, lmk)
+
             embedding = face.embedding
             if embedding is not None:
                 name, sim = recognize_face(embedding)
@@ -169,10 +177,13 @@ def tracking():
 
 if __name__ == "__main__":
     PORT = 16880
+    PORT = 16880
     SERVER = "0.0.0.0"
+    
+
+
     app.run(host=SERVER, port=PORT, debug=True)
 
-    # #
     # server = pywsgi.WSGIServer((SERVER, PORT), app)
     #
     # #
