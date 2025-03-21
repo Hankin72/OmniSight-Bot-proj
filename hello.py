@@ -23,8 +23,9 @@ def run_usb_cam(camera_index=1):
     cap.release()
     cv2.destroyAllWindows()
 
-run_usb_cam(1)
 
+if __name__ == '__main__':
+    run_usb_cam(0)
 
 
 

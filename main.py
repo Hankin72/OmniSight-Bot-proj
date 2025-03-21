@@ -28,9 +28,9 @@ face_model = FaceAnalysis(
                     root='./models')
 face_model.prepare(ctx_id=-1, det_size=(640, 640))
 
-USB_CAM_INDEX = 1
+USB_CAM_INDEX = 0
 stream_running = True
-DRAW_LANDMARKS = True
+DRAW_LANDMARKS = False
 
 
 # 主页
