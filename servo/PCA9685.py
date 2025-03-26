@@ -2,10 +2,10 @@
 
 import time
 import math
-import smbus
+import smbus2 as smbus
 
 # ============================================================================
-# Raspi PCA9685 16-Channel PWM Servo Driver
+# Raspi PCA9685 16-Channel PWM Servo Driver (适配 smbus2)
 # ============================================================================
 
 class PCA9685:
@@ -25,38 +25,27 @@ class PCA9685:
   __ALLLED_OFF_L       = 0xFC
   __ALLLED_OFF_H       = 0xFD
 
-  # def __init__(self, address=0x40, debug=False):
-  #   self.bus = smbus.SMBus(1)
-  #   self.address = address
-  #   self.debug = debug
-  #   if (self.debug):
-  #     print("Reseting PCA9685")
-  #   self.write(self.__MODE1, 0x00)
-
   def __init__(self, address=0x40, debug=False):
-    try:
-        self.bus = smbus.SMBus(1)  # 尝试不同的总线号
-        self.address = address
-        self.debug = debug
-        print(f"Initializing PCA9685 on I2C bus 1, address 0x{self.address:02X}")
-        self.write(self.__MODE1, 0x00)
-    except Exception as e:
-        print(f"初始化失败: {str(e)}")
-        raise
-	
+    self.bus = smbus.SMBus(2)  # smbus2 接口与 smbus 保持一致
+    self.address = address
+    self.debug = debug
+    if (self.debug):
+      print("Reseting PCA9685")
+    self.write(self.__MODE1, 0x00)
+
   def write(self, reg, value):
     "Writes an 8-bit value to the specified register/address"
     self.bus.write_byte_data(self.address, reg, value)
     if (self.debug):
       print("I2C: Write 0x%02X to register 0x%02X" % (value, reg))
-	  
+
   def read(self, reg):
     "Read an unsigned byte from the I2C device"
     result = self.bus.read_byte_data(self.address, reg)
     if (self.debug):
       print("I2C: Device 0x%02X returned 0x%02X from reg 0x%02X" % (self.address, result & 0xFF, reg))
     return result
-	
+
   def setPWMFreq(self, freq):
     "Sets the PWM frequency"
     prescaleval = 25000000.0    # 25MHz
@@ -86,22 +75,23 @@ class PCA9685:
     self.write(self.__LED0_OFF_H+4*channel, off >> 8)
     if (self.debug):
       print("channel: %d  LED_ON: %d LED_OFF: %d" % (channel,on,off))
-	  
+
   def setServoPulse(self, channel, pulse):
-    "Sets the Servo Pulse,The PWM frequency must be 50HZ"
-    pulse = pulse*4096/20000        #PWM frequency is 50HZ,the period is 20000us
+    "Sets the Servo Pulse, The PWM frequency must be 50HZ"
+    pulse = pulse*4096/20000        # PWM frequency is 50HZ, the period is 20000us
     self.setPWM(channel, 0, int(pulse))
 
 if __name__=='__main__':
- 
-  pwm = PCA9685(0x40, debug=False)
+
+  pwm = PCA9685(0x40, debug=True)
   pwm.setPWMFreq(50)
   while True:
    # setServoPulse(2,2500)
     for i in range(500,2500,10):  
-      pwm.setServoPulse(0,i)   
+      pwm.setServoPulse(1,i)   
       time.sleep(0.02)     
     
     for i in range(2500,500,-10):
-      pwm.setServoPulse(0,i) 
+      pwm.setServoPulse(1,i) 
       time.sleep(0.02)  
+  
