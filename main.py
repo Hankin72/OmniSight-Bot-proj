@@ -1,8 +1,7 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory, Response, redirect, url_for
+from flask import Flask, render_template, request, jsonify, send_from_directory, Response
 # from gevent import pywsgi
 from flask_cors import CORS
 import cv2
-import threading
 import os
 import time
 import numpy as np
@@ -15,26 +14,28 @@ CORS(app)
 
 CURR_PATH = os.path.dirname(os.path.abspath(__file__)) + os.path.sep
 TEMPLATES_DIR = os.path.join(CURR_PATH, "templates")
-
 UPLOAD_FOLDER = os.path.join(CURR_PATH, 'collected_faces')
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# 加载人脸数据库和模型
-FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
-face_model = FaceAnalysis(
-                    name='buffalo_s',
-                    allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
-                    root='./models')
+# 模型加载
+face_model = FaceAnalysis(name='buffalo_s', allowed_modules=['detection', 'recognition', 'landmark_2d_106'], root='./models')
 face_model.prepare(ctx_id=-1, det_size=(640, 640))
 
+# 初始数据库
+FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
+
+# 摄像头索引
 USB_CAM_INDEX = 0
-stream_running = True
+
+# 全局状态
+detect_streaming = False
+track_streaming = False
+
 DRAW_LANDMARKS = False
 
 
 # 主页
-@app.route("/", methods=['POST', 'GET'])
+@app.route("/")
 def index():
     return send_from_directory(TEMPLATES_DIR, "index.html")
 
@@ -54,14 +55,11 @@ def collect_upload():
     if not name or not file:
         return jsonify({'status': 'error', 'message': 'Missing name or file'}), 400
 
-    # 校验名称避免非法字符
     if not name.isalnum() and "_" not in name:
-        return jsonify(
-            {'status': 'error', 'message': 'Invalid name format; use letters, numbers or underscores only.'}), 400
-
-    user_folder = os.path.join(UPLOAD_FOLDER, name)
-    if not os.path.exists(user_folder):
-        os.makedirs(user_folder)
+        return jsonify({'status': 'error', 'message': 'Invalid name format'}), 400
+        
+    user_folder = os.path.join(UPLOAD_FOLDER, name)    
+    os.makedirs(user_folder, exist_ok=True)
 
     timestamp = int(time.time())
     filename = f"{name}_{timestamp}.jpg"
@@ -86,6 +84,38 @@ def detect():
     return render_template('detect.html')
 
 
+# 视频流接口
+@app.route('/detect_feed')
+def detect_feed():
+    return Response(generate_detect_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/stop_detect_feed', methods=['POST'])
+def stop_detect_feed():
+    global detect_streaming
+    detect_streaming = False
+    print("stop detect called")
+    return jsonify({'status': 'success', 'message': 'Detect Streaming stopped'})
+
+# 人脸追踪页面
+@app.route('/track')
+def track():
+    return render_template('track.html')
+
+@app.route('/track_feed/<target_name>')
+def track_feed(target_name):
+    print("track_feed =====> ", target_name)
+    return Response(generate_track_stream(target_name), mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+
+@app.route('/stop_track_feed', methods=['POST'])
+def stop_track_feed():
+    global track_streaming
+    track_streaming = False
+    print("stop tracking called")
+    time.sleep(0.5)  # Small delay to allow camera release
+    return jsonify({'status': 'success', 'message': 'Track Streaming stopped'})
+
+
 # 刷新人脸数据库接口
 @app.route('/refresh_face_db', methods=['POST'])
 def refresh_face_db():
@@ -93,57 +123,10 @@ def refresh_face_db():
     print("refresh_face_db called")
     FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
     return jsonify({'status': 'success', 'message': 'Face database refreshed successfully'})
-
-
-@app.route('/stop_detect_feed', methods=['POST'])
-def stop_detect_feed():
-    global stream_running
-    stream_running = False
-    print("stop detect called")
-    return jsonify({'status': 'success', 'message': 'Stream stopped'})
-
-
-# 视频流生成器
-def generate_detect_stream():
-    global stream_running
-    cap = cv2.VideoCapture(USB_CAM_INDEX)
-    if not cap.isOpened():
-        raise IOError("Cannot open webcam")
-
-    stream_running = True
-    while stream_running:
-        ret, frame = cap.read()
-        if not ret:
-            break
-
-        frame = cv2.flip(frame, 1)
-        # frame = cv2.flip(frame, -1)
-        
-        faces = face_model.get(frame)
-
-        for face in faces:
-            bbox = face.bbox.astype(int)
-            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
-
-            if DRAW_LANDMARKS:
-                # 绘制关键点
-                lmk = face.landmark_2d_106
-                lmk = np.round(lmk).astype(int)
-
-                draw_colored_landmarks(frame, lmk)
-
-            embedding = face.embedding
-            if embedding is not None:
-                name, sim = recognize_face(embedding)
-                color = (0, 0, 255) if name != "Unknown" else (0, 255, 0)
-                cv2.putText(frame, name, (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
-
-        _, buffer = cv2.imencode('.jpg', frame)
-        frame_bytes = buffer.tobytes()
-        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-
-    cap.release()
-
+    
+@app.route('/get_known_names')
+def get_known_names():
+    return jsonify({'names': list(FACE_DB.keys())})
 
 # 识别函数
 def recognize_face(embedding):
@@ -164,26 +147,71 @@ def recognize_face(embedding):
 
     return best_match, highest_sim
 
+    
+# # 实时检测流
+def generate_detect_stream():
+    global detect_streaming
+    
+    cap = cv2.VideoCapture(USB_CAM_INDEX)
+    if not cap.isOpened(): raise IOError("Cannot open webcam")
+    detect_streaming = True
+    
+    while detect_streaming:
+        ret, frame = cap.read()
+        if not ret: break
+        frame = cv2.flip(frame, 1)
+        # frame = cv2.flip(frame, -1)
+        
+        faces = face_model.get(frame)
 
-# 视频流接口
-@app.route('/detect_feed')
-def detect_feed():
-    return Response(generate_detect_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
+        # face_model.draw_on(frame, faces)
+        for face in faces:
+            bbox = face.bbox.astype(int)
+            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
 
+            if DRAW_LANDMARKS:
+                # 绘制关键点
+                lmk = face.landmark_2d_106
+                lmk = np.round(lmk).astype(int)
+                draw_colored_landmarks(frame, lmk)
 
-# 人脸追踪页面
-@app.route('/track', methods=['POST', 'GET'])
-def tracking():
-    return render_template('track.html')
+            embedding = face.embedding
+            if embedding is not None:
+                name, sim = recognize_face(embedding)
+                color = (0, 0, 255) if name != "Unknown" else (0, 255, 0)
+                cv2.putText(frame, name, (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
 
+        _, buffer = cv2.imencode('.jpg', frame)
+        frame_bytes = buffer.tobytes()
+        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+    cap.release()
+
+# 实时追踪流
+def generate_track_stream(target_name):
+    global track_streaming
+    cap = cv2.VideoCapture(USB_CAM_INDEX)
+    if not cap.isOpened(): raise IOError("Cannot open webcam")
+    track_streaming = True
+    while track_streaming:
+        ret, frame = cap.read()
+        if not ret: break
+        frame = cv2.flip(frame, 1)
+        faces = face_model.get(frame)
+        for face in faces:
+            name, sim = recognize_face(face.embedding)
+            bbox = face.bbox.astype(int)
+            if name == target_name:
+                cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2)
+                cv2.putText(frame, name, (bbox[0], bbox[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+        _, buffer = cv2.imencode('.jpg', frame)
+        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+    cap.release()
+    
 
 if __name__ == "__main__":
     PORT = 16880
-    PORT = 16880
     SERVER = "0.0.0.0"
     
-
-
     app.run(host=SERVER, port=PORT, debug=True)
 
     # server = pywsgi.WSGIServer((SERVER, PORT), app)

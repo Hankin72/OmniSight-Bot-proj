@@ -8,36 +8,197 @@
         body {
             font-family: Arial, sans-serif;
             background: linear-gradient(135deg, #6dd5ed, #2193b0);
+            margin: 0;
+            padding: 0;
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .video-section {
+            flex: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            margin: 0;
+            justify-content: flex-start;
             padding: 20px;
-            color: #fff;
+        }
+
+        .video-wrapper {
+            margin-top: 40px;
+        }
+
+        .sidebar {
+            flex: 1;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
             text-align: center;
         }
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 40px;
+
+        img.stream {
+            border: 4px solid #fff;
+            border-radius: 10px;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
-        p {
-            font-size: 1.2rem;
-            margin-top: 10px;
+
+        .name-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
         }
-        @media (max-width: 480px) {
-            h1 {
-                font-size: 2rem;
+
+        .name-item {
+            padding: 10px;
+            border-radius: 8px;
+            background-color: #ffffff;
+            color: #2193b0;
+            font-size: 1.1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .name-item:hover {
+            background-color: #2193b0;
+            color: #fff;
+            transform: scale(1.05);
+        }
+
+        .exit-button, .refresh-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #ffffff;
+            color: #2193b0;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .exit-button:hover, .refresh-button:hover {
+            background-color: #2193b0;
+            color: #fff;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
             }
-            p {
-                font-size: 1rem;
+
+            .video-section, .sidebar {
+                flex: unset;
+                width: 100%;
             }
         }
     </style>
 </head>
 <body>
-    <h1>Tracking Someone</h1>
-    <p>The tracking interface or control panel will be displayed here.</p>
+    <div class="video-section">
+        <h1>Tracking Selected Face</h1>
+        <div class="video-wrapper">
+            <img id="videoStream" class="stream" src="" alt="Video stream will appear here">
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <h2>Available Names</h2>
+        <div class="name-list" id="nameList">
+            <p>Loading...</p>
+        </div>
+        <button class="refresh-button" onclick="refreshDatabase()">Refresh DB</button>
+        <button class="exit-button" onclick="exitPage()">Exit</button>
+        <p id="status-message"></p>
+    </div>
+
+    <script>
+        async function fetchNameList() {
+            const resp = await fetch('/get_known_names');
+            const data = await resp.json();
+
+            const container = document.getElementById('nameList');
+            container.innerHTML = '';
+
+            if (data.names.length === 0) {
+                container.innerHTML = '<p>No names found.</p>';
+                return;
+            }
+
+            data.names.forEach(name => {
+                const div = document.createElement('div');
+                div.className = 'name-item';
+                div.innerText = name;
+                div.onclick = () => startTracking(name);
+                container.appendChild(div);
+            });
+        }
+
+        // function startTracking(name) {
+        //     const video = document.getElementById('videoStream');
+        //     video.src = `/track_feed/${name}`;
+        // }
+
+        function startTracking(name) {
+            const video = document.getElementById('videoStream');
+            
+            // Step 1: 通知后端释放摄像头资源
+            fetch('/stop_track_feed', { method: 'POST' })
+                .then(() => {
+                    // Step 2: 断开现有视频流
+                    video.src = '';
+                    
+                    // Step 3: 等待一小段时间后重新加载新流
+                    setTimeout(() => {
+                        video.src = `/track_feed/${name}`;
+                        document.getElementById('status-message').innerText = `Tracking: ${name}`;
+                    }, 200);
+                });
+        }
+
+
+
+        function refreshDatabase() {
+            fetch('/refresh_face_db', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status-message').innerText = data.message;
+                fetchNameList();
+                setTimeout(() => {
+                    document.getElementById('status-message').innerText = '';
+                }, 3000);
+            })
+            .catch(err => {
+                document.getElementById('status-message').innerText = 'Error refreshing database';
+            });
+        }
+
+        function exitPage() {
+            fetch('/stop_track_feed', {
+                method: 'POST'
+            }).then(() => {
+                window.location.href = "/";
+            }).catch(() => {
+                window.location.href = "/";
+            });
+        }
+
+        fetchNameList();
+    </script>
 </body>
 </html>
