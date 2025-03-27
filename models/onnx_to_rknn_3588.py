@@ -1,9 +1,20 @@
+# onnx_to_rknn_3588.py
+
 from rknn.api import rknn, RKNN
 import numpy as np
 
 # RKNN model config
-ONNX_MODEL = './models/buffalo_s/2d106det.onnx'
-RKNN_MODEL = './models/buffalo_s/2d106det.rknn'
+ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.onnx'
+RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.rknn'
+
+
+# ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/w600k_mbf.onnx'
+# RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/w600k_mbf.rknn'
+
+
+# ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/2d106det.onnx'
+# RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/2d106det.rknn'
+
 PLATFORM = "rk3588"
 
 
@@ -20,10 +31,13 @@ print('done')
 # Load ONNX model
 print('--> Loading model')
 # ret = rknn.load_onnx(model=ONNX_MODEL, inputs=['input'], input_size_list=[[1, 30, 128]])
-# ret = rknn.load_onnx(model=ONNX_MODEL,inputs=['input.1'],  input_size_list=[[1, 3, 112, 112]])  #w600k_mbf.onnx
-# ret = rknn.load_onnx(model=ONNX_MODEL,inputs=['input.1'],  input_size_list=[[1, 3, 640, 640]])  #det_500m.onnx
 
-ret = rknn.load_onnx(model=ONNX_MODEL,inputs=['data'],  input_size_list=[[1, 3, 192, 192]])      #2d106det.onnx
+
+# ret = rknn.load_onnx(model=ONNX_MODEL,inputs=['input.1'],  input_size_list=[[1, 3, 112, 112]])  #w600k_mbf.onnx
+
+ret = rknn.load_onnx(model=ONNX_MODEL, inputs=['input.1'],  input_size_list=[[1, 3, 640, 640]])  #det_500m.onnx
+
+# ret = rknn.load_onnx(model=ONNX_MODEL,inputs=['data'],  input_size_list=[[1, 3, 192, 192]])      #2d106det.onnx
 
 if ret != 0:
     print('Load ONNX model failed!')
