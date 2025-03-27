@@ -74,7 +74,7 @@ if __name__ == '__main__':
     controller = ServoController(debug=True)
 
 
-    controller.reset_servo()
+    controller.swing_servo(1)
 
 
 

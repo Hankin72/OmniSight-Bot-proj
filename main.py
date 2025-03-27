@@ -117,6 +117,8 @@ def generate_detect_stream():
             break
 
         frame = cv2.flip(frame, 1)
+        # frame = cv2.flip(frame, -1)
+        
         faces = face_model.get(frame)
 
         for face in faces:
