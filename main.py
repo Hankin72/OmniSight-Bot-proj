@@ -8,6 +8,7 @@ import numpy as np
 from FaceDatabase import DEFAULT_FILENAME_DB, save_face_database, get_image_paths, load_face_database
 from insightface.app import FaceAnalysis
 from FaceUtils import LOCAL_MODELS_PATH, draw_colored_landmarks
+from servo.PCA9685 import PCA9685
 
 app = Flask(__name__)
 CORS(app)
@@ -33,6 +34,71 @@ track_streaming = False
 
 DRAW_LANDMARKS = False
 
+# 舵机控制初始化
+pwm = PCA9685(0x40)
+pwm.setPWMFreq(50)
+
+PAN_CHANNEL = 1 # 水平方向舵机
+TILT_CHANNEL = 0  # 垂直方向舵机
+pan_angle = 90  # 水平方向舵机初始化角度
+tilt_angle = 70  # 垂直方向舵机初始化角度
+
+# 误差死区，防止舵机微小抖动
+DEAD_ZONE = 25
+
+# PID 控制器参数
+dt = 0.1
+class PID:
+    def __init__(self, kp, ki, kd, output_limit=5):
+        self.kp = kp
+        self.ki = ki
+        self.kd = kd
+        self.output_limit = output_limit
+        self.prev_error = 0
+        self.integral = 0
+
+    def update(self, error):
+        self.integral += error * dt
+        derivative = (error - self.prev_error) / dt
+        output = self.kp * error + self.ki * self.integral + self.kd * derivative
+        self.prev_error = error
+
+        # 限制输出最大变化幅度
+        output = max(-self.output_limit, min(self.output_limit, output))
+        return output
+
+
+pid_pan = PID(0.015, 0.01, 0.0008)
+pid_tilt = PID(0.025, 0.01, 0.0083)
+
+def angle_to_pulse(angle):
+    return int(600 + (angle / 180.0) * (2400 - 600))
+
+def reset_servo_position():
+    global pan_angle, tilt_angle
+    pan_angle, tilt_angle = 90, 70
+    pwm.setServoPulse(PAN_CHANNEL, angle_to_pulse(pan_angle))
+    pwm.setServoPulse(TILT_CHANNEL, angle_to_pulse(tilt_angle))
+    time.sleep(1.0)  # 舵机回中后，等待1秒再开始 PID 控制
+
+
+def update_servo_position(face_x, face_y, center_x, center_y):
+    global pan_angle, tilt_angle
+    dx = face_x - center_x
+    dy = face_y - center_y
+
+    if abs(dx) < DEAD_ZONE: dx = 0
+    if abs(dy) < DEAD_ZONE: dy = 0
+
+    pan_angle += pid_pan.update(dx)
+    tilt_angle += pid_tilt.update(dy)
+
+    pan_angle = max(0, min(180, pan_angle))
+    tilt_angle = max(0, min(180, tilt_angle))
+
+    pwm.setServoPulse(PAN_CHANNEL, angle_to_pulse(pan_angle))
+    pwm.setServoPulse(TILT_CHANNEL, angle_to_pulse(tilt_angle))
+    
 
 # 主页
 @app.route("/")
@@ -112,7 +178,8 @@ def stop_track_feed():
     global track_streaming
     track_streaming = False
     print("stop tracking called")
-    time.sleep(0.5)  # Small delay to allow camera release
+    reset_servo_position()
+    time.sleep(0.8)  # Small delay to allow camera release
     return jsonify({'status': 'success', 'message': 'Track Streaming stopped'})
 
 
@@ -197,18 +264,34 @@ def generate_track_stream(target_name):
         if not ret: break
         frame = cv2.flip(frame, 1)
         faces = face_model.get(frame)
+
+        frame_height, frame_width = frame.shape[:2]
+        cx, cy = frame_width // 2, frame_height // 2
+        cv2.circle(frame, (cx, cy), 5, (0, 255, 255), -1)  # 标记画面中心
+        
         for face in faces:
             name, sim = recognize_face(face.embedding)
             bbox = face.bbox.astype(int)
             if name == target_name:
+                fx = int((bbox[0] + bbox[2]) / 2)  # 人脸中心点（X）
+                fy = int((bbox[1] + bbox[3]) / 2)   # 人脸中心点（Y）
+                
+                update_servo_position(fx, fy, cx, cy)
+                
                 cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2)
                 cv2.putText(frame, name, (bbox[0], bbox[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
+
+                cv2.circle(frame, (fx, fy), 5, (255, 255, 0), -1)  # 标记人脸中心
+                cv2.line(frame, (cx, cy), (fx, fy), (255, 255, 255), 2)  # 连线
+                
         _, buffer = cv2.imencode('.jpg', frame)
         yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
     cap.release()
     
 
 if __name__ == "__main__":
+    reset_servo_position()
+    
     PORT = 16880
     SERVER = "0.0.0.0"
     
