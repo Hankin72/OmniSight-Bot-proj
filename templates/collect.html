@@ -69,9 +69,19 @@
             width: 100%;
             max-width: 600px;
         }
+        .exit-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #ff4d4d;
+        }
+        .exit-btn:hover {
+            background-color: #cc0000;
+        }
     </style>
 </head>
 <body>
+    <button class="exit-btn" onclick="exitToHomepage()">Exit</button>
     <h1>Face Collection via Webcam</h1>
 
     <div class="video-container">
@@ -166,6 +176,14 @@
                 })
                 .catch(error => alert('Upload failed: ' + error));
             }, 'image/jpeg');
+        }
+
+        function exitToHomepage() {
+            // Stop the camera stream if it's running
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+            window.location.href = '/'; // Change this to your homepage URL
         }
 
         window.onload = startCamera;
