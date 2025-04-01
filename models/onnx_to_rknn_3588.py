@@ -3,17 +3,17 @@
 from rknn.api import rknn, RKNN
 import numpy as np
 
-# RKNN model config
-ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.onnx'
-RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.rknn'
+# # RKNN model config
+# ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.onnx'
+# RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.rknn'
 
 
 # ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/w600k_mbf.onnx'
 # RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/w600k_mbf.rknn'
 
 
-# ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/2d106det.onnx'
-# RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/2d106det.rknn'
+ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/2d106det.onnx'
+RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/2d106det.rknn'
 
 PLATFORM = "rk3588"
 
@@ -23,8 +23,8 @@ rknn = RKNN(verbose=True)
 
 # pre-process config
 print('--> Config model')
-# rknn.config(target_platform=PLATFORM)
-rknn.config(mean_values=[[127.5, 127.5, 127.5]], std_values=[[128, 128, 128]], target_platform=PLATFORM)
+rknn.config(target_platform=PLATFORM) # 2d106det.onnx'
+# rknn.config(mean_values=[[127.5, 127.5, 127.5]], std_values=[[128, 128, 128]], target_platform=PLATFORM)
 print('done')
 
 
@@ -35,9 +35,9 @@ print('--> Loading model')
 
 # ret = rknn.load_onnx(model=ONNX_MODEL,inputs=['input.1'],  input_size_list=[[1, 3, 112, 112]])  #w600k_mbf.onnx
 
-ret = rknn.load_onnx(model=ONNX_MODEL, inputs=['input.1'],  input_size_list=[[1, 3, 640, 640]])  #det_500m.onnx
+# ret = rknn.load_onnx(model=ONNX_MODEL, inputs=['input.1'],  input_size_list=[[1, 3, 640, 640]])  #det_500m.onnx
 
-# ret = rknn.load_onnx(model=ONNX_MODEL,inputs=['data'],  input_size_list=[[1, 3, 192, 192]])      #2d106det.onnx
+ret = rknn.load_onnx(model=ONNX_MODEL,inputs=['data'],  input_size_list=[[1, 3, 192, 192]])      #2d106det.onnx
 
 if ret != 0:
     print('Load ONNX model failed!')

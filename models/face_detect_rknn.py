@@ -8,7 +8,11 @@ import matplotlib.pyplot as plt
 from face_align import distance2bbox, distance2kps, nms
 from face_rknn_utils import showimage
 
-
+INPUT_SIZE = (640, 640)  # (width, height)
+STRIDES = [8, 16, 32]    # 常见RetinaFace的3个stride
+CONF_THRESH = 0.5
+NMS_THRESH = 0.4
+    
 
 def forward(img,threshold,fmc=3, feat_stride_fpn=[8, 16, 32], num_anchors=2,use_kps=False, det_rknn=None,):
     
@@ -31,6 +35,7 @@ def forward(img,threshold,fmc=3, feat_stride_fpn=[8, 16, 32], num_anchors=2,use_
     blob = blob.transpose(0, 2, 3, 1)  # Change from 'nchw' to 'nhwc'
 
     net_outs = det_rknn.inference(inputs=[blob], data_format='nhwc')
+    # net_outs = det_rknn.inference(inputs=[blob], data_format='nhwc')
 
     input_height = blob.shape[1]
     input_width = blob.shape[2]
@@ -203,8 +208,9 @@ def detect_faces(rknn_model_path, img_path, input_size=(640, 640), max_num=0, us
         print("No faces detected!")
         return None, None
 
-    print("Bounding boxes:")
-    print(det)
+    print("Bounding boxes:\n", det)
+    
+    print("Face keypoints:\n", kpss)
 
     # # 保存检测框到 txt 文件
     # np.savetxt(output_bbox_path, det, fmt="%.5f")
@@ -242,17 +248,14 @@ def main():
     # 1. 路径配置
     RKNN_MODEL_PATH = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.rknn'
     IMG_PATH = '/home/orangepi/Documents/face_algorithm_proj/dataset/01_IMG_1029.JPG'
-    INPUT_SIZE = (640, 640)  # (width, height)
-    STRIDES = [8, 16, 32]    # 常见RetinaFace的3个stride
-    CONF_THRESH = 0.5
-    NMS_THRESH = 0.4
-    USE_KPS = False           # 是否解析关键点
+    USE_KPS = True           # 是否解析关键点
     
     bbox_output_path = "/home/orangepi/Documents/face_algorithm_proj/models/results.txt"
     
     detect_faces(
         rknn_model_path=RKNN_MODEL_PATH,
         img_path=IMG_PATH,
+        use_kps=USE_KPS,
     )
 
 
