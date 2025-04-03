@@ -23,8 +23,8 @@ rknn = RKNN(verbose=True)
 
 # pre-process config
 print('--> Config model')
-rknn.config(target_platform=PLATFORM) # 2d106det.onnx'
-# rknn.config(mean_values=[[127.5, 127.5, 127.5]], std_values=[[128, 128, 128]], target_platform=PLATFORM)
+# rknn.config(target_platform=PLATFORM) # 2d106det.onnx'
+rknn.config(mean_values=[[127.5, 127.5, 127.5]], std_values=[[128, 128, 128]], target_platform=PLATFORM) #det_500m.onnx w600k_mbf.onnx
 print('done')
 
 
