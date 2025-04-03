@@ -2,21 +2,18 @@ import os.path
 import cv2
 import numpy as np
 from insightface.app import FaceAnalysis
-import json
-
-import os.path
-
-import cv2
-import numpy as np
-from insightface.app import FaceAnalysis
 from FaceUtils import *
 import json
+from models.myRknnFaceAnalysis import MyRknnFaceAnalysis
+from face_loader import get_face_model
+
 
 DEFAULT_FILENAME_DB = 'my_face_database_s.npy'
 
 # DEFAULT_FILENAME_DB = 'my_face_database_sc.npy'
 # USE_DEFAULT_MODEL="buffalo_sc"
 USE_DEFAULT_MODEL = "buffalo_s"
+RKNN_PLATFORM=True
 
 
 class FaceDatabase:
@@ -53,11 +50,8 @@ class FaceDatabase:
 
 class FaceDetector:
     def __init__(self, model_name=USE_DEFAULT_MODEL):
-        self.app = FaceAnalysis(name=model_name, allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
-                                root="./models")
-
-        # self.app = FaceAnalysis(name=model_name, allowed_modules=['detection', 'recognition'], root="./models")
-        self.app.prepare(ctx_id=-1, det_size=(640, 640))  # 使用 CPU
+        
+        self.app = get_face_model()
 
     def detect_and_extract(self, image_path):
         """

@@ -7,11 +7,11 @@ import numpy as np
 # 1) 从 face_detect_rknn 导入
 #    - face_detect(): 用 det_500m.rknn 做人脸检测
 #    - load_rknn_model(): 读取 .rknn 并 init_runtime
-from face_detect_rknn import face_detect, load_rknn_model
+from .face_detect_rknn import face_detect, load_rknn_model
 
 # 2) 从 face_align.py 导入你已有的对齐函数/仿射变换函数
-from face_align import transform, trans_points
-from face_feature_rknn import face_align_cv2, face_feature
+from .face_align import transform, trans_points
+from .face_feature_rknn import face_align_cv2, face_feature
 
 
 
@@ -25,7 +25,7 @@ def get_face_landmark_106(img, bbox, input_size=(192, 192), lmk_num=106, landmar
     rotate = 0
     scale = input_size[0] / (max(w, h) * 1.5)
     
-    print("param:", img.shape, bbox, center, input_size, scale, rotate)
+    # print("param:", img.shape, bbox, center, input_size, scale, rotate)
     
     # 仿射变换 => aimg
     aimg, M = transform(img, center, input_size[0], scale, rotate)
@@ -41,7 +41,7 @@ def get_face_landmark_106(img, bbox, input_size=(192, 192), lmk_num=106, landmar
     # 输出转换为关键点坐标 
     pred = out_list[0]
     
-    print("rknn_landmark_outs", len(pred), pred.shape)
+    # print("rknn_landmark_outs", len(pred), pred.shape)
 
     # reshape => (106,2) or (106,3)
     if pred.shape[0] >= 3000:

@@ -1,17 +1,18 @@
 import cv2
 import numpy as np
 import os
-import insightface
 from insightface.app import FaceAnalysis
 from insightface.data import get_image as ins_get_image
 import onnxruntime as ort
 from FaceUtils import *
 from FaceDatabase import load_face_database, DEFAULT_FILENAME_DB
+from models.myRknnFaceAnalysis import MyRknnFaceAnalysis
+from face_loader import get_face_model
 
 DEFAULT_FILENAME_DB = 'my_face_database_s.npy'
 USE_DEFAULT_MODEL = "buffalo_s"
 FACE_DATABASE = load_face_database(filename=DEFAULT_FILENAME_DB)
-DRAW_LANDMARKS = True
+DRAW_LANDMARKS = False
 
 
 class FaceRecognitionTest:
@@ -40,9 +41,9 @@ class FaceRecognitionTest:
             self.providers = providers if providers else ort.get_available_providers()
 
         # print('Available providers:', self.providers)
-        self.app = FaceAnalysis(name=model_name, allowed_modules=allowed_modules, providers=self.providers,
-                                root=LOCAL_MODELS_PATH)
-        self.app.prepare(ctx_id=ctx_id, det_size=det_size)
+        
+        # 模型加载， 默认为RKNN
+        self.app = get_face_model()
 
         self.cap = cv2.VideoCapture(camera_index)
         if not self.cap.isOpened():

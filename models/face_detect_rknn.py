@@ -1,12 +1,12 @@
-import argparse
+# face_detect_rknn.py
 
 import cv2
 import numpy as np
 from rknn.api import RKNN
 import matplotlib.pyplot as plt
 
-from face_align import distance2bbox, distance2kps, nms
-from face_rknn_utils import showimage
+from .face_align import distance2bbox, distance2kps, nms
+from .face_rknn_utils import showimage
 
 INPUT_SIZE = (640, 640)  # (width, height)
 STRIDES = [8, 16, 32]    # 常见RetinaFace的3个stride
@@ -87,7 +87,7 @@ def forward(img,threshold,fmc=3, feat_stride_fpn=[8, 16, 32], num_anchors=2,use_
 
 
 # 获取人脸检测框
-def face_detect(img, input_size=None, max_num=0, metric="default", use_kps=False, det_rknn=None):
+def face_detect(img, input_size=None, max_num=0, metric="default", use_kps=False, det_rknn=None, threshold=0.5):
     assert input_size is not None or input_size is not None
     
     input_size = input_size if input_size is None else input_size
@@ -113,7 +113,7 @@ def face_detect(img, input_size=None, max_num=0, metric="default", use_kps=False
 
     # 调用forward对人脸进行检测
     scores_list, bboxes_list, kpss_list = forward(
-        det_img, threshold=0.5, use_kps=use_kps, det_rknn=det_rknn
+        det_img, threshold=threshold, use_kps=use_kps, det_rknn=det_rknn
     )
 
     scores = np.vstack(scores_list) # 所有特征层的分数堆叠
@@ -208,9 +208,10 @@ def detect_faces(rknn_model_path, img_path, input_size=(640, 640), max_num=0, us
         print("No faces detected!")
         return None, None
 
+    print("Detectded face num:\n", len(det))
     print("Bounding boxes:\n", det)
     
-    print("Face keypoints:\n", kpss)
+    # print("Face keypoints:\n", kpss)
 
     # # 保存检测框到 txt 文件
     # np.savetxt(output_bbox_path, det, fmt="%.5f")

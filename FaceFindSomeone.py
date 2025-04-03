@@ -1,23 +1,25 @@
 import cv2
 import numpy as np
 import os
-import insightface
 from insightface.app import FaceAnalysis
 from insightface.data import get_image as ins_get_image
 import onnxruntime as ort
 from FaceUtils import *
 from FaceDatabase import load_face_database, DEFAULT_FILENAME_DB
+from models.myRknnFaceAnalysis import MyRknnFaceAnalysis
+from face_loader import get_face_model
 
 DEFAULT_FILENAME_DB = 'my_face_database_s.npy'
 USE_DEFAULT_MODEL = "buffalo_s"
 FACE_DATABASE = load_face_database(filename=DEFAULT_FILENAME_DB)
 DRAW_LANDMARKS = False
+RKNN_PLATFORM=True
 
 
 class FaceRecognitionTest:
     def __init__(self,
                  model_name='buffalo_s',
-                 allowed_modules=['detection', 'landmark_2d_106'],
+                 allowed_modules=["detection", "recognition", 'landmark_2d_106'],
                  providers=None,
                  ctx_id=0,
                  det_size=(640, 640),
@@ -29,10 +31,15 @@ class FaceRecognitionTest:
             self.providers = providers if providers else ort.get_available_providers()
 
         # print('Available providers:', self.providers)
-        self.app = FaceAnalysis(name=model_name, allowed_modules=allowed_modules, providers=self.providers,
-                                root=LOCAL_MODELS_PATH)
-        self.app.prepare(ctx_id=ctx_id, det_size=det_size)
-
+        # if RKNN_PLATFORM:
+        #     self.app = MyRknnFaceAnalysis(name=model_name, allowed_modules=allowed_modules, root=LOCAL_MODELS_PATH)
+        #     self.app.prepare(det_size=det_size)
+        # else:
+        #     self.app = FaceAnalysis(name=model_name, allowed_modules=allowed_modules, providers=self.providers,
+        #                             root=LOCAL_MODELS_PATH)
+        #     self.app.prepare(ctx_id=ctx_id, det_size=det_size)
+        self.app = get_face_model()
+        
         self.cap = cv2.VideoCapture(camera_index)
         if not self.cap.isOpened():
             raise IOError("无法打开摄像头")

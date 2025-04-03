@@ -9,6 +9,8 @@ from FaceDatabase import DEFAULT_FILENAME_DB, save_face_database, get_image_path
 from insightface.app import FaceAnalysis
 from FaceUtils import LOCAL_MODELS_PATH, draw_colored_landmarks
 from servo.PCA9685 import PCA9685
+from models.myRknnFaceAnalysis import MyRknnFaceAnalysis
+from face_loader import get_face_model
 
 app = Flask(__name__)
 CORS(app)
@@ -18,9 +20,11 @@ TEMPLATES_DIR = os.path.join(CURR_PATH, "templates")
 UPLOAD_FOLDER = os.path.join(CURR_PATH, 'collected_faces')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
+ALLOWED_MODULES=['detection', 'recognition', 'landmark_2d_106']
+DRAW_LANDMARKS = False
+
 # 模型加载
-face_model = FaceAnalysis(name='buffalo_s', allowed_modules=['detection', 'recognition', 'landmark_2d_106'], root='./models')
-face_model.prepare(ctx_id=-1, det_size=(640, 640))
+face_model = get_face_model(use_rknn=True, allowed_modules=['detection', 'recognition'], root='./models')
 
 # 初始数据库
 FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
@@ -31,8 +35,6 @@ USB_CAM_INDEX = 0
 # 全局状态
 detect_streaming = False
 track_streaming = False
-
-DRAW_LANDMARKS = False
 
 # 舵机控制初始化
 pwm = PCA9685(0x40)

@@ -1,8 +1,9 @@
-from face_detect_rknn import face_detect
-from rknn.api import RKNN
+# face_feature_rknn.py
 import cv2
 import numpy as np
-from face_detect_rknn import load_rknn_model
+
+from .face_detect_rknn import face_detect
+from .face_detect_rknn import load_rknn_model
 
 
 def face_align_cv2(img, keypoints, image_size=(112, 112), method="similar"):
@@ -48,7 +49,7 @@ def face_feature(aligned_faces, feature_rknn):
     for i, face in enumerate(aligned_faces):
         # shape(3,112,112) -> shape(1,3,112,112)
         face = face.astype(np.float32)
-        face = (face - 127.5) / 128
+        # face = (face - 127.5) / 128
         # face = np.transpose(face, (2, 0, 1))
         
         face = np.expand_dims(face, axis=0)
