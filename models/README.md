@@ -1,0 +1,2 @@
+如果设备运行报错提示rknn_runtime版本问题，需要更新so
+将当前目录下librknnrt.so 替换到/urs/lib
