@@ -57,7 +57,7 @@ class MyRknnFaceAnalysis:
         
         if bboxes is None or bboxes.shape[0] == 0:
             print("No faces detected!")
-            return None, None
+            return []
 
         # print("Detectded face num:", len(bboxes))
         # print("Bounding boxes:\n", bboxes)

@@ -84,7 +84,7 @@ class FaceRecognitionTest:
                 cv2.putText(frame, name, (bbox[0], bbox[1] - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, COLOR_RED, 2)
             else:
-                cv2.putText(frame, name, (bbox[0], bbox[1] - 10),
+                cv2.putText(frame, name + " not found", (bbox[0], bbox[1] - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, COLOR_GREEN, 2)
 
         return frame
@@ -158,7 +158,7 @@ class FaceRecognitionTest:
 
 
 if __name__ == '__main__':
-    target_person_name = "haojin"
+    target_person_name = "hankin"
 
     detector = FaceRecognitionTest(
         model_name=USE_DEFAULT_MODEL,
