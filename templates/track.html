@@ -134,6 +134,7 @@
             <p>Loading...</p>
         </div>
         <button class="refresh-button" onclick="refreshDatabase()">Refresh DB</button>
+        <button class="refresh-button" onclick="resetServo()">Reset Servo</button>
         <button class="exit-button" onclick="exitPage()">Exit</button>
         <p id="status-message"></p>
     </div>
@@ -195,10 +196,26 @@
                 fetchNameList();
                 setTimeout(() => {
                     document.getElementById('status-message').innerText = '';
-                }, 3000);
+                }, 2000);
             })
             .catch(err => {
                 document.getElementById('status-message').innerText = 'Error refreshing database';
+            });
+        }
+
+        function resetServo() {
+            fetch('/reset_servo', {
+                method: "POST"
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('status-message').innerText = data.message || 'Servo reset';
+                setTimeout(() => {
+                    document.getElementById('status-message').innerText = '';
+                }, 2000)
+            })
+            .catch(err => {
+                document.getElementById('status-message').innerText = 'Error refreshing servo';
             });
         }
 

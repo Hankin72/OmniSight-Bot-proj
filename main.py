@@ -43,7 +43,7 @@ pwm = PCA9685(0x40)
 pwm.setPWMFreq(50)
 
 PAN_CHANNEL, TILT_CHANNEL = 1, 0 # 水平方向舵机, # 垂直方向舵机
-pan_angle, tilt_angle = 90, 70  # 水平方向舵机初始化角度, # 垂直方向舵机初始化角度
+pan_angle, tilt_angle = 90, 60  # 水平方向舵机初始化角度, # 垂直方向舵机初始化角度
 
 
 # 误差死区，防止舵机微小抖动
@@ -79,7 +79,7 @@ def angle_to_pulse(angle):
 
 def reset_servo_position():
     global pan_angle, tilt_angle
-    pan_angle, tilt_angle = 90, 70
+    pan_angle, tilt_angle = 90, 60
     pwm.setServoPulse(PAN_CHANNEL, angle_to_pulse(pan_angle))
     pwm.setServoPulse(TILT_CHANNEL, angle_to_pulse(tilt_angle))
     
@@ -197,7 +197,15 @@ def refresh_face_db():
     global FACE_DB
     print("refresh_face_db called")
     FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
-    return jsonify({'status': 'success', 'message': 'Face database refreshed successfully'})
+    return jsonify({'status': 'success', 'message': 'Face database refreshed successfully.'})
+
+@app.route('/reset_servo', methods=['POST'])
+def reset_servo():
+    try:
+        reset_servo_position()
+        return jsonify({'status': 'success', 'message': 'Servo has been reset to center.'})
+    except Exception as e:
+        return jsonify({'status': 'fail','message': f'Error: {str(e)}'})
     
 @app.route('/get_known_names')
 def get_known_names():
