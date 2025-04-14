@@ -1,10 +1,12 @@
-from flask import Flask, render_template, request, jsonify, send_from_directory, Response
-# from gevent import pywsgi
-from flask_cors import CORS
 import cv2
 import os
 import time
+import threading
 import numpy as np
+# from gevent import pywsgi
+from flask_cors import CORS
+from flask import Flask, render_template, request, jsonify, send_from_directory, Response
+
 from FaceDatabase import DEFAULT_FILENAME_DB, save_face_database, get_image_paths, load_face_database
 from insightface.app import FaceAnalysis
 from FaceUtils import LOCAL_MODELS_PATH, draw_colored_landmarks
@@ -80,6 +82,11 @@ def reset_servo_position():
     pan_angle, tilt_angle = 90, 70
     pwm.setServoPulse(PAN_CHANNEL, angle_to_pulse(pan_angle))
     pwm.setServoPulse(TILT_CHANNEL, angle_to_pulse(tilt_angle))
+    
+    pid_pan.prev_error  = 0
+    pid_pan.integral    = 0
+    pid_tilt.prev_error = 0 
+    pid_tilt.integral   = 0
     time.sleep(1.0)  # 舵机回中后，等待1秒再开始 PID 控制
 
 
