@@ -144,7 +144,7 @@ def collect_upload():
     image_paths = get_image_paths(user_folder)
     save_face_database(image_paths=image_paths, person_name=name, filename=DEFAULT_FILENAME_DB)
 
-    return jsonify({'status': 'success', 'message': f'Image saved in {user_folder} as {filename}'})
+    return jsonify({'status': 'success', 'message': f'Successfuly! Image saved as {filename}'})
 
 
 # # 提供上传页面（供手机扫码跳转后使用）

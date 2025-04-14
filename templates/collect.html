@@ -69,11 +69,22 @@
             width: 100%;
             max-width: 600px;
         }
+
+        #button-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
         .exit-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
             background-color: #ff4d4d;
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: white;
+            font-size: 1.1rem;
+            cursor: pointer;
+            margin-top: 10px;
         }
         .exit-btn:hover {
             background-color: #cc0000;
@@ -81,7 +92,6 @@
     </style>
 </head>
 <body>
-    <button class="exit-btn" onclick="exitToHomepage()">Exit</button>
     <h1>Face Collection via Webcam</h1>
 
     <div class="video-container">
@@ -92,7 +102,7 @@
                 <defs>
                     <mask id="faceMask">
                         <rect width="110%" height="95%" fill="white"/>
-                        <ellipse cx="200" cy="200" rx="80" ry="120" fill="black"/>
+                        <ellipse cx="200" cy="200" rx="100" ry="140" fill="black"/>
                     </mask>
                 </defs>
                 <rect width="100%" height="100%" fill="rgba(255, 255, 255, 0.6)" mask="url(#faceMask)"/>
@@ -104,8 +114,13 @@
 
     <input type="text" id="name" placeholder="Enter name (no Chinese)" pattern="[A-Za-z0-9_]+" required>
     <br/>
-    <div id="buttons">
-        <button onclick="capturePhoto()">Capture Image</button>
+
+    <div id="button-container">
+        <div id="buttons">
+            <button onclick="capturePhoto()">Capture Image</button>
+        </div>
+
+        <button class="exit-btn" onclick="exitToHomepage()">Exit</button>
     </div>
 
     <script>
