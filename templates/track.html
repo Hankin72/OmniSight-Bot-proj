@@ -163,9 +163,10 @@
                     
                     // Step 3: 等待一小段时间后重新加载新流
                     setTimeout(() => {
-                        video.src = `/track_feed/${name}`;
+                        const timestamp = new Date().getTime();
+                        video.src = `/track_feed/${name}?t=${timestamp}`;  // 加时间戳防缓存
                         document.getElementById('status-message').innerText = `Tracking: ${name}`;
-                    }, 200);
+                    }, 500);
                 });
         }
 
