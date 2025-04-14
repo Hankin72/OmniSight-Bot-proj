@@ -40,13 +40,12 @@ track_streaming = False
 pwm = PCA9685(0x40)
 pwm.setPWMFreq(50)
 
-PAN_CHANNEL = 1 # 水平方向舵机
-TILT_CHANNEL = 0  # 垂直方向舵机
-pan_angle = 90  # 水平方向舵机初始化角度
-tilt_angle = 70  # 垂直方向舵机初始化角度
+PAN_CHANNEL, TILT_CHANNEL = 1, 0 # 水平方向舵机, # 垂直方向舵机
+pan_angle, tilt_angle = 90, 70  # 水平方向舵机初始化角度, # 垂直方向舵机初始化角度
+
 
 # 误差死区，防止舵机微小抖动
-DEAD_ZONE = 25
+DEAD_ZONE = 40
 
 # PID 控制器参数
 dt = 0.1
@@ -105,7 +104,7 @@ def update_servo_position(face_x, face_y, center_x, center_y):
 # 主页
 @app.route("/")
 def index():
-    return send_from_directory(TEMPLATES_DIR, "index.html")
+    return render_template("index.html")
 
 
 # 人脸采集页面
@@ -180,7 +179,7 @@ def stop_track_feed():
     global track_streaming
     track_streaming = False
     print("stop tracking called")
-    reset_servo_position()
+    # reset_servo_position()
     time.sleep(0.8)  # Small delay to allow camera release
     return jsonify({'status': 'success', 'message': 'Track Streaming stopped'})
 
