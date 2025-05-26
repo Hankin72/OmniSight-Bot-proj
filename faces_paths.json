@@ -1,9 +1,9 @@
 {
-    "fuming": "./sample/fuming",
     "lufangfang": "./sample/lufangfang",
     "yefang": "./sample/yefang",
     "yupeng": "./sample/yupeng",
     "zhangkai": "./sample/zhangkai",
     "zhangpeng": "./sample/zhangpeng",
-    "zhengyanfen": "./sample/zhengyanfen"
+    "zhengyanfen": "./sample/zhengyanfen",
+    "hankin": "sample/hankin"
 }

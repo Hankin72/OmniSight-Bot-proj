@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import time
 import os
 from insightface.app import FaceAnalysis
 from insightface.data import get_image as ins_get_image
@@ -43,7 +44,7 @@ class FaceRecognitionTest:
         # print('Available providers:', self.providers)
         
         # 模型加载， 默认为RKNN
-        self.app = get_face_model()
+        self.app = get_face_model(int_8=True)
 
         self.cap = cv2.VideoCapture(camera_index)
         if not self.cap.isOpened():
@@ -140,6 +141,7 @@ class FaceRecognitionTest:
         #     # if cv2.waitKey(1) & 0xFF == ord('q'):
         #     #     return
         # else:
+        pTime = 0
         while True:
             ret, frame = self.cap.read()
             if not ret:
@@ -152,6 +154,11 @@ class FaceRecognitionTest:
             frame = self.process_frame(frame)
 
             # self.out.write(frame)
+            cTime = time.time()
+            fps = 1 / (cTime - pTime)
+            pTime = cTime
+
+            cv2.putText(frame, f"FPS: {int(fps)}", (40, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 255), 3)
 
             cv2.imshow('Real-time Face Detection', frame)
 
@@ -176,6 +183,6 @@ if __name__ == '__main__':
         ctx_id=-1,  # 设置为 -1 使用 CPU
         det_size=(640, 480),
         camera_index=0,
-        flip=True
+        flip=True,
     )
     detector.run()

@@ -51,7 +51,7 @@ class FaceDatabase:
 class FaceDetector:
     def __init__(self, model_name=USE_DEFAULT_MODEL):
         
-        self.app = get_face_model()
+        self.app = get_face_model(int_8=True)
 
     def detect_and_extract(self, image_path):
         """

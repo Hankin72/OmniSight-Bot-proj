@@ -17,7 +17,8 @@ def get_face_model(
     allowed_modules: Optional[List[str]] = None,
     root: str = './models',
     det_size: Tuple[int, int] = (640, 640),
-    ctx_id: int = -1
+    ctx_id: int = -1,
+    int_8=False
 ):
     """
     初始化人脸分析模型接口
@@ -37,7 +38,7 @@ def get_face_model(
         allowed_modules = ['detection', 'recognition', 'landmark_2d_106']
     
     if use_rknn:
-        model = MyRknnFaceAnalysis(name=model_name, allowed_modules=allowed_modules, root=root)
+        model = MyRknnFaceAnalysis(name=model_name, allowed_modules=allowed_modules, root=root, int_8=int_8)
         model.prepare(det_size=det_size)
     else:
         model = FaceAnalysis(name=model_name, allowed_modules=allowed_modules, root=root)

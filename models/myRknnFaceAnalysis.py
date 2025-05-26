@@ -11,12 +11,13 @@ from .face_rknn_utils import draw_colored_landmarks
 
 
 class MyRknnFaceAnalysis:
-    def __init__(self, name='buffalo_s', root='./models', allowed_modules=None):
+    def __init__(self, name='buffalo_s', root='./models', allowed_modules=None, int_8=False):
         self.name = name
         self.root = os.path.join(os.path.expanduser(root), 'models')
         self.allowed_modules = allowed_modules if allowed_modules else ['detection', 'recognition']
         self.model_paths = {}
         self.models = {}
+        self.int_8 = int_8
 
     def prepare(self, ctx_id=-1, det_size=(640, 640), threshold=0.5):
         self.det_size = det_size
@@ -24,11 +25,18 @@ class MyRknnFaceAnalysis:
         base_path = os.path.join(self.root, self.name)
         all_models = glob.glob(os.path.join(base_path, '*.rknn'))
 
-        model_map = {
-            'detection': 'det_500m.rknn',
-            'recognition': 'w600k_mbf.rknn',
-            'landmark_2d_106': '2d106det.rknn'
-        }
+        if self.int_8:
+            model_map = {
+                'detection': 'det_500m_int8.rknn',
+                'recognition': 'w600k_mbf_int8.rknn',
+                'landmark_2d_106': '2d106det.rknn'
+            }
+        else:
+            model_map = {
+                'detection': 'det_500m.rknn',
+                'recognition': 'w600k_mbf.rknn',
+                'landmark_2d_106': '2d106det.rknn'
+            }
 
         for task in self.allowed_modules:
             keyword = model_map.get(task)
