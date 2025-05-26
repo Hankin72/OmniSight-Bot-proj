@@ -47,17 +47,17 @@ def recognize_face(embedding):
 
 
 if __name__ == "__main__":    
-    img_path = "./dataset/02_IMG_8647.JPG"
+    img_path = "/home/orangepi/Documents/face_algorithm_proj/dataset/01_IMG_1029.JPG"
 
     img = cv2.imread(img_path)
 
     app = MyRknnFaceAnalysis(name="buffalo_s",
-                            root="/home/orangepi/Documents/new_face_algorithm_proj/models/",
-                            allowed_modules=["detection", "recognition"])
+                            root="/home/orangepi/Documents/face_algorithm_proj/models/",
+                            allowed_modules=["detection", "recognition"], int_8=True)
     
     app.prepare(det_size=(640, 640))
 
-    target_name="haojin"
+    target_name="hankin"
 
     faces = app.get(img)
     
