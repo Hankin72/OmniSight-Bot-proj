@@ -5,11 +5,13 @@ import numpy as np
 
 # # RKNN model config
 # ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.onnx'
-# RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.rknn'
+# # RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.rknn'
+# RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m_int8.rknn'
 
 
 ONNX_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/w600k_mbf.onnx'
-RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/w600k_mbf.rknn'
+# RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/w600k_mbf.rknn'
+RKNN_MODEL = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/w600k_mbf_int8.rknn'
 
 
 # ONNX_MODEL = '/home/orangepi/Documents/new_face_algorithm_proj/models/models/buffalo_s/2d106det.onnx'
@@ -24,7 +26,9 @@ rknn = RKNN(verbose=True)
 # pre-process config
 print('--> Config model')
 # rknn.config(target_platform=PLATFORM) # 2d106det.onnx'
+
 rknn.config(mean_values=[[127.5, 127.5, 127.5]], std_values=[[128, 128, 128]], target_platform=PLATFORM) #det_500m.onnx w600k_mbf.onnx
+
 print('done')
 
 
@@ -47,7 +51,8 @@ print('done')
 
 # Build model
 print('--> Building model')
-ret = rknn.build(do_quantization=False)
+# ret = rknn.build(do_quantization=False)
+ret = rknn.build(do_quantization=True, dataset="/home/orangepi/Documents/face_algorithm_proj/dataset2/dataset.txt")
 if ret != 0:
     print('Build model failed!')
     exit(ret)

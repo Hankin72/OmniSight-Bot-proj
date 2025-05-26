@@ -247,8 +247,9 @@ def detect_faces(rknn_model_path, img_path, input_size=(640, 640), max_num=0, us
 
 def main():
     # 1. 路径配置
-    RKNN_MODEL_PATH = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.rknn'
-    IMG_PATH = '/home/orangepi/Documents/face_algorithm_proj/dataset/01_IMG_1029.JPG'
+    # RKNN_MODEL_PATH = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m.rknn'
+    RKNN_MODEL_PATH = '/home/orangepi/Documents/face_algorithm_proj/models/models/buffalo_s/det_500m_int8.rknn'
+    IMG_PATH = '/home/orangepi/Documents/face_algorithm_proj/dataset2/human_images/challenge2020-03-31-145224_0004.jpg'
     USE_KPS = True           # 是否解析关键点
     
     bbox_output_path = "/home/orangepi/Documents/face_algorithm_proj/models/results.txt"
