@@ -164,7 +164,7 @@ def generate_detect_stream():
         # face_model.draw_on(frame, faces)
         for face in faces:
             bbox = face.bbox.astype(int)
-            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
+            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 1)
 
             if DRAW_LANDMARKS:
                 # 绘制关键点

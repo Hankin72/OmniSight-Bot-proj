@@ -250,7 +250,7 @@ def generate_detect_stream():
         # face_model.draw_on(frame, faces)
         for face in faces:
             bbox = face.bbox.astype(int)
-            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 2)
+            cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 1)
 
             if DRAW_LANDMARKS:
                 # 绘制关键点
@@ -294,7 +294,7 @@ def generate_track_stream(target_name):
                 
                 update_servo_position(fx, fy, cx, cy)
                 
-                cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 2)
+                cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 1)
                 cv2.putText(frame, name, (bbox[0], bbox[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 0, 255), 2)
 
                 cv2.circle(frame, (fx, fy), 5, (255, 255, 0), -1)  # 标记人脸中心
