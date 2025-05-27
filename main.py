@@ -26,7 +26,7 @@ ALLOWED_MODULES=['detection', 'recognition', 'landmark_2d_106']
 DRAW_LANDMARKS = False
 
 # 模型加载
-face_model = get_face_model(use_rknn=True, allowed_modules=['detection', 'recognition'], root='./models')
+face_model = get_face_model(use_rknn=True, allowed_modules=['detection', 'recognition'], root='./models', int_8=True)
 
 # 初始数据库
 FACE_DB = load_face_database(DEFAULT_FILENAME_DB)
