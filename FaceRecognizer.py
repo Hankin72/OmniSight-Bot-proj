@@ -142,6 +142,10 @@ class FaceRecognitionTest:
         #     #     return
         # else:
         pTime = 0
+        frame_count = 0
+        
+        last_frame = None
+        every_intervel = 3
         while True:
             ret, frame = self.cap.read()
             if not ret:
@@ -150,8 +154,15 @@ class FaceRecognitionTest:
 
             if self.flip:
                 frame = cv2.flip(frame, 1)
+            
+            frame_count +=1
 
-            frame = self.process_frame(frame)
+            if frame_count % every_intervel == 0:
+                frame = self.process_frame(frame)
+            #     last_frame =  frame
+            # else:
+            #     if last_frame is None:
+            #         last_frame = frame
 
             # self.out.write(frame)
             cTime = time.time()
