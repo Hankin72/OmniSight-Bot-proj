@@ -6,14 +6,14 @@ import cv2
 import numpy as np
 from FaceUtils import *
 from pcb.Pcb_Car import Pcb_Car
-from FaceDatabase import load_face_database
+# from FaceDatabase import load_face_database
 from insightface.app import FaceAnalysis
 
 car = Pcb_Car()
 
 DEFAULT_FILENAME_DB_PI5 = 'my_face_database_s_pi5.npy'
 USE_DEFAULT_MODEL = "buffalo_s"
-FACE_DB = load_face_database(filename=DEFAULT_FILENAME_DB_PI5)
+# FACE_DB = load_face_database(filename=DEFAULT_FILENAME_DB_PI5)
 # 模型加载
 PI_PROVIDERS = ['CPUExecutionProvider']
 
@@ -28,11 +28,11 @@ S1 = 1  # 垂直方向
 S2 = 2  # 水平方向
 
 PAN_CHANNEL, TILT_CHANNEL = S2, S1 # 水平方向舵机, # 垂直方向舵机
-HORIZONTAL_SERVO_CENTER, VERTICAL_SERVO_INIT = 90, 40  # 水平方向舵机初始化角度, # 垂直方向舵机初始化角度
+HORIZONTAL_SERVO_CENTER, VERTICAL_SERVO_INIT = 90, 35  # 水平方向舵机初始化角度, # 垂直方向舵机初始化角度
 pan_angle, tilt_angle = HORIZONTAL_SERVO_CENTER, VERTICAL_SERVO_INIT  # 水平方向舵机初始化角度, # 垂直方向舵机初始化角度
 
 # 旋转配置
-SPIN_SPEED = 40
+SPIN_SPEED = 35
 SPIN_DURATION = 8  # 秒，旋转一圈时间
 
 # 跳帧检测间隔
@@ -74,6 +74,8 @@ class RotateFaceScanner:
         self.current_tilt_angle = VERTICAL_SERVO_INIT
         
         self.running = False
+        
+        self.is_spining = False
 
     def reset_servo_position(self):
         self.set_vertical_angle()
@@ -120,6 +122,21 @@ class RotateFaceScanner:
         car.Ctrl_Servo(PAN_CHANNEL, pan_angle)
         car.Ctrl_Servo(TILT_CHANNEL, tilt_angle)
     
+    def start_spining(self, direction = 'left'):
+        if direction == 'left':
+            car.Car_Spin_Left(SPIN_SPEED, SPIN_SPEED)
+        elif direction == 'right':
+            car.Car_Spin_Right(SPIN_SPEED, SPIN_SPEED)
+        else:
+            print("无效方向")
+            self.is_spining = False
+            return
+        self.is_spining = True
+    
+    def stop_spining(self, direction = 'left'):
+        car.Car_Stop()
+        self.is_spining = False
+        
 
     def rotate_and_scan(self, direction='left'):
         global SPIN_DURATION, pan_angle, tilt_angle
@@ -130,13 +147,14 @@ class RotateFaceScanner:
         
         print("开始旋转并检测人脸...")
         
-        if direction == 'left':
-            car.Car_Spin_Left(SPIN_SPEED, SPIN_SPEED)
-        elif direction == 'right':
-            car.Car_Spin_Right(SPIN_SPEED, SPIN_SPEED)
-        else:
-            print("无效方向")
-            return
+        # if direction == 'left':
+        #     car.Car_Spin_Left(SPIN_SPEED, SPIN_SPEED)
+        # elif direction == 'right':
+        #     car.Car_Spin_Right(SPIN_SPEED, SPIN_SPEED)
+        # else:
+        #     print("无效方向")
+        #     return
+        
 
         self.running = True
         
@@ -152,6 +170,8 @@ class RotateFaceScanner:
         detected_face = None
         detected_face_embedding =  None
         
+        max_update_timeout_times = 2
+        
         while self.running:
             d_time = time.time() - start_time
             if d_time > SPIN_DURATION:
@@ -161,7 +181,7 @@ class RotateFaceScanner:
                 else:
                     print("旋转超时，检测到人脸, 完成追踪 。。。 ")
                     self.running = False
-                car.Car_Stop()
+                self.stop_spining()
             
             time.sleep(0.01)
             print(" spining time 0.01 ---> ", d_time)
@@ -188,12 +208,16 @@ class RotateFaceScanner:
                         
                         detected_face = face
                         
-                        car.Car_Stop()
+                        # car.Car_Stop()
+                        self.stop_spining()
                         
                         # time.sleep(0.05) 
-                
-                        SPIN_DURATION += 3
-                        print("旋转检测到人脸, PID追踪 + 3s")
+                        if max_update_timeout_times > 0:
+                            max_update_timeout_times -= 1 
+                            
+                            SPIN_DURATION += 3
+                            print("旋转检测到人脸, PID追踪 + 3s", max_update_timeout_times, " ")
+                            
                     else:
                         for face in faces:
                             if self.compare_cosine_similarity(face.embedding, detected_face_embedding):
@@ -208,21 +232,29 @@ class RotateFaceScanner:
 
                                 cv2.circle(frame, (fx, fy), 5, (255, 255, 0), -1)  # 标记人脸中心
                                 cv2.line(frame, (cx, cy), (fx, fy), (255, 255, 255), 2)  # 连线
+                else:
+                    detected_face_embedding = None
+                    print("detected face lost, continue spin within timeout >>>> ")
+                    if not self.is_spining:
+                        self.start_spining(direction=direction)
                             
-    
+            if not self.is_spining and frame_count > every_interval and detected_face_embedding is None:
+                self.start_spining(direction=direction)
+                
             cTime = time.time()
             fps = 1 / (cTime - pTime)
             pTime = cTime
 
             cv2.putText(frame, f"FPS: {int(fps)}", (40, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0), 3)
-            # cv2.imshow('Real-time Face Detection', frame)
+            cv2.imshow('Real-time Face Detection', frame)
             
 
-            # if cv2.waitKey(1) == ord('q'):
-            #     break
+            if cv2.waitKey(1) == ord('q'):
+                break
 
 
-        car.Car_Stop()
+        # car.Car_Stop()
+        self.stop_spining()
         cap.release()
         cv2.destroyAllWindows()
         self.running = False
@@ -247,45 +279,7 @@ class RotateFaceScanner:
             cv2.imshow("Face Tracking", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-
-                
-    # def track_face_loop(self):
-    #     while True:
-    #         ret, frame = self.cap.read()
-    #         if not ret: break
-            
-    #         frame = cv2.flip(frame, 1)
-            
-    #         faces = self.face_scanner.app.get(frame)
-            
-    #         frame_height, frame_width = frame.shape[:2]
-    #         frame_center_x = frame_width // 2  #
-    #         frame_center_y = frame_height // 2  #
-    #         cv2.circle(frame, (frame_center_x, frame_center_y), 5, (0, 255, 255), -1)  # 标记画面中心
-            
-    #         if not faces:
-    #             print("人脸丢失， 结束追踪")
-            
-    #         face = faces[0]
-            
-    #         bbox = face.bbox.astype(int)
-            
-    #         face_center_x = int((bbox[0] + bbox[2]) / 2)
-    #         face_center_y = int((bbox[1] + bbox[3]) / 2)
-            
-    #         self.center_face_pid(frame_center_x, frame_center_y, face_center_x, face_center_y)
-            
-    #         cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 0, 255), 1)
-            
-    #         cv2.circle(frame, (face_center_x, face_center_y), 5, (255, 255, 0), -1)  # 标记人脸中心
-            
-    #         cv2.line(frame, (frame_center_x, frame_center_y), (face_center_x, face_center_y), (255, 255, 255), 2)  # 连线
-            
-    #         cv2.imshow("Face Tracking", frame)
-    #         if cv2.waitKey(1) & 0xFF == ord('q'):
-    #             break
-            
-             
+     
             
     def center_face_pid(self, face, frame):
         bbox = face.bbox.astype(int)
