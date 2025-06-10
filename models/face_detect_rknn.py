@@ -174,7 +174,9 @@ def load_rknn_model(model_path, target='rk3588'):
     ret = rknn.load_rknn(model_path)
     if ret != 0:
         raise RuntimeError("Failed to load RKNN model")
-    ret = rknn.init_runtime(target=target)
+    
+    ret = rknn.init_runtime(target=target, core_mask=RKNN.NPU_CORE_0_1_2)
+
     if ret != 0:
         raise RuntimeError("Failed to init RKNN runtime")
     

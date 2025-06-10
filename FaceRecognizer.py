@@ -44,7 +44,7 @@ class FaceRecognitionTest:
         # print('Available providers:', self.providers)
         
         # 模型加载， 默认为RKNN
-        self.app = get_face_model(int_8=True)
+        self.app = get_face_model(int_8=True, allowed_modules = ['detection', 'recognition'])
 
         self.cap = cv2.VideoCapture(camera_index)
         if not self.cap.isOpened():
@@ -61,10 +61,14 @@ class FaceRecognitionTest:
         处理单帧图像，进行人脸检测和关键点绘制。
         """
         # 人脸检测
+        start = time.time()
         faces = self.app.get(frame)
+        elapsed = (time.time() - start) * 1000 
+
+        # print(f"\nFaces:{len(faces)} Inference time: {elapsed:.2f} ms\n")
 
         # 绘制检测结果
-        for face in faces:
+        for face in faces: 
             bbox = face.bbox.astype(int)
 
             cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), COLOR_GREEN, 1)
@@ -145,7 +149,7 @@ class FaceRecognitionTest:
         frame_count = 0
         
         last_frame = None
-        every_intervel = 3
+        every_intervel = 1
         while True:
             ret, frame = self.cap.read()
             if not ret:
@@ -192,7 +196,7 @@ if __name__ == '__main__':
         model_name=USE_DEFAULT_MODEL,
         allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
         ctx_id=-1,  # 设置为 -1 使用 CPU
-        det_size=(640, 480),
+        det_size=(640, 640),
         camera_index=0,
         flip=True,
     )
