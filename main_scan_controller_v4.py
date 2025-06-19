@@ -28,7 +28,7 @@ S1 = 1  # 垂直方向
 S2 = 2  # 水平方向
 
 PAN_CHANNEL, TILT_CHANNEL = S2, S1 # 水平方向舵机, # 垂直方向舵机
-HORIZONTAL_SERVO_CENTER, VERTICAL_SERVO_INIT = 90, 35  # 水平方向舵机初始化角度, # 垂直方向舵机初始化角度
+HORIZONTAL_SERVO_CENTER, VERTICAL_SERVO_INIT = 90, 40  # 水平方向舵机初始化角度, # 垂直方向舵机初始化角度
 pan_angle, tilt_angle = HORIZONTAL_SERVO_CENTER, VERTICAL_SERVO_INIT  # 水平方向舵机初始化角度, # 垂直方向舵机初始化角度
 
 # 旋转配置
@@ -246,17 +246,17 @@ class RotateFaceScanner:
             pTime = cTime
 
             cv2.putText(frame, f"FPS: {int(fps)}", (40, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 0), 3)
-            cv2.imshow('Real-time Face Detection', frame)
+            # cv2.imshow('Real-time Face Detection', frame)
             
 
-            if cv2.waitKey(1) == ord('q'):
-                break
+            # if cv2.waitKey(1) == ord('q'):
+            #     break
 
 
         # car.Car_Stop()
         self.stop_spining()
         cap.release()
-        cv2.destroyAllWindows()
+        # cv2.destroyAllWindows()
         self.running = False
         print(" spining car stop ---> ")
 
