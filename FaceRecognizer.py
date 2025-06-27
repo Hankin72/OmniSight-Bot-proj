@@ -1,3 +1,5 @@
+# FaceRecognizer.py
+
 import cv2
 import numpy as np
 import time
@@ -95,6 +97,7 @@ class FaceRecognitionTest:
             else:
                 cv2.putText(frame, name, (bbox[0], bbox[1] - 10),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.9, COLOR_RED, 2)
+        print(f"Found {len(faces)} faces; ", end="")
         return frame
 
     @staticmethod
@@ -159,10 +162,13 @@ class FaceRecognitionTest:
             if self.flip:
                 frame = cv2.flip(frame, 1)
             
-            frame_count +=1
+            # frame_count +=1
 
-            if frame_count % every_intervel == 0:
-                frame = self.process_frame(frame)
+            start_time = time.time()
+            # if frame_count % every_intervel == 0:
+            frame = self.process_frame(frame)
+                
+            inference_time = (time.time() - start_time) * 1000
             #     last_frame =  frame
             # else:
             #     if last_frame is None:
@@ -173,6 +179,8 @@ class FaceRecognitionTest:
             fps = 1 / (cTime - pTime)
             pTime = cTime
 
+            print(f"Inference time: {inference_time:.4f}ms, FPS: {fps:.2f}")
+            
             cv2.putText(frame, f"FPS: {int(fps)}", (40, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 255), 3)
 
             cv2.imshow('Real-time Face Detection', frame)
@@ -194,7 +202,7 @@ class FaceRecognitionTest:
 if __name__ == '__main__':
     detector = FaceRecognitionTest(
         model_name=USE_DEFAULT_MODEL,
-        allowed_modules=['detection', 'recognition', 'landmark_2d_106'],
+        allowed_modules=['detection', 'recognition'],
         ctx_id=-1,  # 设置为 -1 使用 CPU
         det_size=(640, 640),
         camera_index=0,

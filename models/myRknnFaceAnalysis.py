@@ -1,4 +1,4 @@
-# my_rknn_face_analysis.py
+# myRknnFaceAnalysis.py
 import os
 import glob
 import cv2
@@ -46,7 +46,7 @@ class MyRknnFaceAnalysis:
             if matched:
                 self.model_paths[task] = matched[0]
                 self.models[task] = load_rknn_model(matched[0], target='rk3588')
-                print(f"[INFO] Loaded {task} model: {matched[0]}")
+                # print(f"[INFO] Loaded {task} model: {matched[0]}")
             else:
                 raise ValueError(f"[ERROR] Cannot find model for task: {task} in {base_path}")
 

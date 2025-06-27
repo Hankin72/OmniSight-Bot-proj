@@ -153,6 +153,9 @@ def generate_detect_stream():
     if not cap.isOpened(): raise IOError("Cannot open webcam")
     detect_streaming = True
     
+    pTime = 0
+    frame_count = 0
+    
     while detect_streaming:
         ret, frame = cap.read()
         if not ret: break
@@ -177,6 +180,12 @@ def generate_detect_stream():
                 name, sim = recognize_face(embedding)
                 color = (0, 0, 255) if name != "Unknown" else (0, 255, 0)
                 cv2.putText(frame, name, (bbox[0], bbox[1] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
+            
+        cTime = time.time()
+        fps = 1 / (cTime - pTime)
+        pTime = cTime
+
+        cv2.putText(frame, f"FPS: {int(fps)}", (40, 50), cv2.FONT_HERSHEY_PLAIN, 2, (255, 0, 255), 3)
 
         _, buffer = cv2.imencode('.jpg', frame)
         frame_bytes = buffer.tobytes()

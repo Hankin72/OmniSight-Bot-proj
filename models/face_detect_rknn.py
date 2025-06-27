@@ -168,19 +168,19 @@ def face_detect(img, input_size=None, max_num=0, metric="default", use_kps=False
     return det, kpss  # 返回最终检测框和关键点
 
 
-def load_rknn_model(model_path, target='rk3588'):
+def load_rknn_model(model_path, target='rk3588', core_mask=RKNN.NPU_CORE_0_1_2):
     rknn = RKNN()
     print(f"--> Loading RKNN model: {model_path}")
     ret = rknn.load_rknn(model_path)
     if ret != 0:
         raise RuntimeError("Failed to load RKNN model")
     
-    ret = rknn.init_runtime(target=target, core_mask=RKNN.NPU_CORE_0_1_2)
+    ret = rknn.init_runtime(target=target, core_mask=core_mask, async_mode=True)
 
     if ret != 0:
         raise RuntimeError("Failed to init RKNN runtime")
     
-    print("RKNN model loaded and initialized.")
+    # print("RKNN model loaded and initialized.")
     return rknn
 
 
