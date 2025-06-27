@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 # Load face classifier
-face_classifier = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
+face_classifier = cv2.CascadeClassifier("./haarcascade_frontalface_default.xml")
 
 # Open webcam
 video_capture = cv2.VideoCapture(0)
