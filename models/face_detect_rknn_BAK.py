@@ -12,35 +12,9 @@ INPUT_SIZE = (640, 640)  # (width, height)
 STRIDES = [8, 16, 32]    # 常见RetinaFace的3个stride
 CONF_THRESH = 0.5
 NMS_THRESH = 0.4
+    
 
-
-# === [优化新增] Anchor 缓存机制 ===
-# 全局缓存，只初始化一次
-ANCHOR_CENTER_CACHE = {}
-
-def get_anchor_centers(height, width, stride, num_anchors):
-    """
-    基于特征层尺寸 + stride 生成并缓存 anchor center 坐标
-    """
-    key = (height, width, stride, num_anchors)
-    if key in ANCHOR_CENTER_CACHE:
-        return ANCHOR_CENTER_CACHE[key]
-
-    anchor_centers = np.zeros((height, width, 2), dtype=np.float32)
-    for i in range(height):
-        anchor_centers[i, :, 1] = i
-    for j in range(width):
-        anchor_centers[:, j, 0] = j
-    anchor_centers = (anchor_centers * stride).reshape((-1, 2))
-
-    if num_anchors > 1:
-        anchor_centers = np.stack([anchor_centers] * num_anchors, axis=1).reshape((-1, 2))
-
-    ANCHOR_CENTER_CACHE[key] = anchor_centers
-    return anchor_centers
-# === [优化新增 END] ===
-
-def forward(img,threshold,fmc=3, feat_stride_fpn=[8, 16, 32], num_anchors=2, use_kps=False, det_rknn=None,):
+def forward(img,threshold,fmc=3, feat_stride_fpn=[8, 16, 32], num_anchors=2,use_kps=False, det_rknn=None,):
     
     center_cache = {}
     global kps_preds
@@ -49,15 +23,22 @@ def forward(img,threshold,fmc=3, feat_stride_fpn=[8, 16, 32], num_anchors=2, use
     kpss_list = []
     input_size = tuple(img.shape[0:2][::-1])
 
-    # === 替代 cv2.dnn.blobFromImage ===
-    # 假设传入的 img 已经是 RGB 格式，大小为 input_size (640,640)
-    # === 优化点: 手动构造输入 blob（float32 + batch + NHWC） ===
-    input_data = img.astype(np.float32)          # 保留 RGB 顺序，转 float32
-    input_data = np.expand_dims(input_data, 0)   # (H, W, C) → (1, H, W, C)
-    net_outs = det_rknn.inference(inputs=[input_data], data_format='nhwc')
+    # 将图像转换为模型可接受的输入格式
+    blob = cv2.dnn.blobFromImage(
+        img,
+        1.0,
+        input_size,
+        (0, 0, 0),
+        swapRB=True,
+    )
+    
+    blob = blob.transpose(0, 2, 3, 1)  # Change from 'nchw' to 'nhwc'
 
-    input_height = input_data.shape[1]
-    input_width = input_data.shape[2]
+    net_outs = det_rknn.inference(inputs=[blob], data_format='nhwc')
+    # net_outs = det_rknn.inference(inputs=[blob], data_format='nhwc')
+
+    input_height = blob.shape[1]
+    input_width = blob.shape[2]
     
     for idx, stride in enumerate(feat_stride_fpn):
         scores = net_outs[idx]
@@ -67,10 +48,28 @@ def forward(img,threshold,fmc=3, feat_stride_fpn=[8, 16, 32], num_anchors=2, use
             kps_preds = net_outs[idx + fmc * 2] * stride
         height = input_height // stride
         width = input_width // stride
-        
-        # === [优化替代] 使用 anchor_centers 全局缓存函数 ===
-        anchor_centers = get_anchor_centers(height, width, stride, num_anchors)
-        # === [优化替代 END] ===
+        # K = height * width
+        key = (height, width, stride)
+        if key in center_cache:
+            anchor_centers = center_cache[key]
+            print("key in center_cache")
+        else:
+        #     print("height, width, stride", height, width, stride)
+
+            # solution-1, c style:
+            anchor_centers = np.zeros((height, width, 2), dtype=np.float32)
+            for i in range(height):
+                anchor_centers[i, :, 1] = i
+            for i in range(width):
+                anchor_centers[:, i, 0] = i
+
+            anchor_centers = (anchor_centers * stride).reshape((-1, 2))
+            if num_anchors > 1:
+                anchor_centers = np.stack(
+                    [anchor_centers] * num_anchors, axis=1
+                ).reshape((-1, 2))
+            if len(center_cache) < 100:
+                center_cache[key] = anchor_centers
 
         pos_inds = np.where(scores >= threshold)[0]
         bboxes = distance2bbox(anchor_centers, bbox_preds)
