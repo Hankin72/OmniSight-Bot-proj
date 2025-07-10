@@ -146,7 +146,7 @@ def display_loop():
             fps = 0
         
         if fps:
-            print(f'FPS: {int(fps)}')
+            # print(f'FPS: {int(fps)}')
             cv2.putText(frame_out, f'FPS: {int(fps)}', (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0), 2)
             
         cv2.imshow("OmniSight-Camera", frame_out)
