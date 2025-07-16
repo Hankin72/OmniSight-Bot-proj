@@ -129,9 +129,8 @@ while True:
         
         start_time = time.time()
         
-        # faces = face_model.get(frame)
-        
-        # draw_faces(faces=faces)
+        faces = face_model.get(frame)
+        draw_faces(faces=faces)
         # frame = face_model.draw_on(frame, faces)
         # frame = face_model.draw_on_landmark106(frame, faces)
     
@@ -145,7 +144,7 @@ while True:
         
         # print(f", FPS: {fps:.2f}")
         
-        print(f"Found 0 person, faces, Inference time: {inference_time:.4f}ms, FPS: {fps:.3f}")
+        print(f"Found 0 person, {len(faces)} faces, Inference time: {inference_time:.4f}ms, FPS: {fps:.3f}")
         cv2.putText(frame, f'FPS: {int(fps)}', (40, 50 ), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 0, 0), 3)
     
         cv2.imshow("Camera", frame)
