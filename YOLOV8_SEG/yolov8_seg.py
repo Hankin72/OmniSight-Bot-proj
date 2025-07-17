@@ -12,10 +12,10 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 # add path
-realpath = os.path.abspath(__file__)
-_sep = os.path.sep
-realpath = realpath.split(_sep)
-sys.path.append(os.path.join(realpath[0]+_sep, *realpath[1:realpath.index('rknn_model_zoo')+1]))
+# realpath = os.path.abspath(__file__)
+# _sep = os.path.sep
+# realpath = realpath.split(_sep)
+# sys.path.append(os.path.join(realpath[0]+_sep, *realpath[1:realpath.index('rknn_model_zoo')+1]))
 
 from coco_utils import COCO_test_helper
 
@@ -253,7 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--target', type=str, default='rk3566', help='target RKNPU platform')
     parser.add_argument('--device_id', type=str, default=None, help='device id')
     
-    parser.add_argument('--img_show', action='store_true', default=False, help='draw the result and show')
+    parser.add_argument('--img_show', action='store_true', default=True, help='draw the result and show')
     parser.add_argument('--img_save', action='store_true', default=False, help='save the result')
 
     # data params
